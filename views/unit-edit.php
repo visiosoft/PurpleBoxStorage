@@ -40,25 +40,19 @@
             <div class="inside">
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th><label for="unit_number"><?php echo $unit ? esc_html__('Unit Number', 'purplebox-storage') : esc_html__('Unit Number / Prefix', 'purplebox-storage'); ?> <span class="required">*</span></label></th>
+                        <th><label for="unit_number"><?php esc_html_e('Unit Number', 'purplebox-storage'); ?> <span class="required">*</span></label></th>
                         <td>
                             <input type="text" id="unit_number" name="unit_number" value="<?php echo esc_attr($unit['unit_number'] ?? ''); ?>" required class="regular-text" placeholder="<?php esc_attr_e('e.g. A01, G-25, F1-10', 'purplebox-storage'); ?>">
-                            <?php if (!$unit) : ?>
-                                <p class="description"><?php esc_html_e('If Quantity > 1, this is used as a prefix: e.g. "A" → A01, A02…', 'purplebox-storage'); ?></p>
-                            <?php else : ?>
-                                <p class="description"><?php esc_html_e('Internal reference code. Must be unique.', 'purplebox-storage'); ?></p>
-                            <?php endif; ?>
+                            <p class="description"><?php esc_html_e('Internal reference code. Must be unique.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
-                    <?php if (!$unit) : ?>
                     <tr>
                         <th><label for="quantity"><?php esc_html_e('Quantity', 'purplebox-storage'); ?></label></th>
                         <td>
-                            <input type="number" id="quantity" name="quantity" value="1" min="1" max="200" class="small-text">
-                            <p class="description"><?php esc_html_e('Number of identical units to create. Quantity of 1 uses the unit number as-is.', 'purplebox-storage'); ?></p>
+                            <input type="number" id="quantity" name="quantity" value="<?php echo esc_attr($unit['quantity'] ?? 1); ?>" min="1" max="500" class="small-text">
+                            <p class="description"><?php esc_html_e('Total number of this unit type available. Stock reduces automatically as contracts are created.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
-                    <?php endif; ?>
                     <tr>
                         <th><label for="display_name"><?php esc_html_e('Display Name', 'purplebox-storage'); ?></label></th>
                         <td>

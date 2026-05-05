@@ -43,11 +43,8 @@ class Purplebox_Units_Controller {
             wp_die(__('Security check failed', 'purplebox-storage'));
         }
 
-        $unit_id  = absint($_POST['unit_id'] ?? 0);
-        $quantity = $unit_id ? 1 : max(1, min(200, absint($_POST['quantity'] ?? 1)));
-
         $data = [
-            'id'               => $unit_id,
+            'id'               => absint($_POST['unit_id'] ?? 0),
             'unit_number'      => sanitize_text_field($_POST['unit_number'] ?? ''),
             'display_name'     => $_POST['display_name'] ?? '',
             'size_category'    => $_POST['size_category'] ?? '',
@@ -55,32 +52,15 @@ class Purplebox_Units_Controller {
             'floor'            => $_POST['floor'] ?? 'Ground',
             'price'            => $_POST['price'] ?? 0,
             'discounted_price' => $_POST['discounted_price'] ?? '',
+            'quantity'         => absint($_POST['quantity'] ?? 1),
             'facility'         => $_POST['facility'] ?? '',
             'features'         => $_POST['features'] ?? [],
             'notes'            => $_POST['notes'] ?? '',
         ];
 
-        if ($quantity === 1) {
-            $id = Purplebox_DB::save_unit($data);
-            wp_redirect(admin_url('admin.php?page=purplebox-unit-edit&unit_id=' . $id . '&saved=1'));
-            exit;
-        }
+        $id = Purplebox_DB::save_unit($data);
 
-        // Bulk create: use unit_number as prefix → A01, A02 … A{N}
-        $prefix  = $data['unit_number'];
-        $created = 0;
-        $pad     = strlen((string) $quantity); // e.g. qty=10 → pad 2, qty=100 → pad 3
-
-        for ($i = 1; $i <= $quantity; $i++) {
-            $data['id']          = 0;
-            $data['unit_number'] = $prefix . sprintf('%0' . $pad . 'd', $i);
-            $data['unit_group']  = $prefix;
-            if (Purplebox_DB::save_unit($data)) {
-                $created++;
-            }
-        }
-
-        wp_redirect(admin_url('admin.php?page=purplebox-units&bulk_created=' . $created));
+        wp_redirect(admin_url('admin.php?page=purplebox-unit-edit&unit_id=' . $id . '&saved=1'));
         exit;
     }
 }

@@ -9,8 +9,7 @@ if (!class_exists('WP_List_Table')) {
 
 class Purplebox_Units_Table extends WP_List_Table {
 
-    private $rented_ids  = [];
-    private $group_stock = [];
+    private $rented_counts = [];
 
     public function __construct() {
         parent::__construct([
@@ -65,8 +64,7 @@ class Purplebox_Units_Table extends WP_List_Table {
 
     public function prepare_items() {
         $this->process_bulk_action();
-        $this->rented_ids  = Purplebox_DB::get_all_rented_unit_ids();
-        $this->group_stock = Purplebox_DB::get_group_stock();
+        $this->rented_counts = Purplebox_DB::get_rented_count_per_unit();
 
         $per_page = 30;
         $current_page = $this->get_pagenum();
@@ -158,33 +156,29 @@ class Purplebox_Units_Table extends WP_List_Table {
     }
 
     public function column_stock($item) {
-        $group = $item['unit_group'] ?? '';
-        if (empty($group) || !isset($this->group_stock[$group])) {
-            return '<span style="color:#50575e;">—</span>';
-        }
-        $s     = $this->group_stock[$group];
-        $avail = (int) $s['available'];
-        $total = (int) $s['total'];
+        $total  = max(1, (int) ($item['quantity'] ?? 1));
+        $rented = $this->rented_counts[(int) $item['id']] ?? 0;
+        $avail  = max(0, $total - $rented);
 
         if ($avail === 0) {
             $color = '#b32d2e';
-            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
-        } elseif ($avail <= max(1, intval($total * 0.2))) {
+        } elseif ($avail <= max(1, (int) ($total * 0.25))) {
             $color = '#8a6500';
-            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
         } else {
             $color = '#00691f';
-            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
         }
         return sprintf(
-            '<span style="font-weight:600; color:%s;">%s</span>',
+            '<span style="font-weight:600; color:%s;">%d / %d</span>',
             esc_attr($color),
-            esc_html($label)
+            $avail,
+            $total
         );
     }
 
     public function column_status($item) {
-        $is_rented = in_array((int) $item['id'], $this->rented_ids);
+        $total     = max(1, (int) ($item['quantity'] ?? 1));
+        $rented    = $this->rented_counts[(int) $item['id']] ?? 0;
+        $is_rented = $rented >= $total;
         if ($is_rented) {
             return '<span class="pill" style="background:#e8f0fe; color:#1e4ea1;">' . __('Rented', 'purplebox-storage') . '</span>';
         }

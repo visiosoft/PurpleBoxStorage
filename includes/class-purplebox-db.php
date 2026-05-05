@@ -134,7 +134,7 @@ class Purplebox_DB {
             'floor'            => sanitize_text_field($data['floor'] ?? 'Ground'),
             'price'            => floatval($data['price'] ?? 0),
             'discounted_price' => !empty($data['discounted_price']) ? floatval($data['discounted_price']) : null,
-            'unit_group'       => !empty($data['unit_group']) ? sanitize_text_field($data['unit_group']) : null,
+            'quantity'         => max(1, absint($data['quantity'] ?? 1)),
             'facility'         => sanitize_text_field($data['facility'] ?? 'PurpleBox Al Quoz'),
             'features'         => !empty($data['features']) ? wp_json_encode($data['features']) : null,
             'notes'            => sanitize_textarea_field($data['notes'] ?? ''),
@@ -158,30 +158,36 @@ class Purplebox_DB {
      * Check if a unit is currently rented (part of any active contract).
      */
     public static function is_unit_rented($unit_id) {
-        global $wpdb;
-        $table = self::contracts_table();
-        $contracts = $wpdb->get_results(
-            "SELECT id, unit_ids FROM $table WHERE status = 'active'",
-            ARRAY_A
-        );
+        $unit     = self::get_unit($unit_id);
+        $quantity = max(1, (int) ($unit['quantity'] ?? 1));
+        $counts   = self::get_rented_count_per_unit();
+        return ($counts[(int) $unit_id] ?? 0) >= $quantity;
+    }
 
-        foreach ($contracts as $c) {
-            $ids = json_decode($c['unit_ids'], true);
-            if (is_array($ids) && in_array((int) $unit_id, array_map('intval', $ids))) {
-                return true;
-            }
+    /**
+     * How many slots are still available for a unit.
+     */
+    public static function get_unit_available_slots($unit_id, $rented_counts = null) {
+        $unit     = self::get_unit($unit_id);
+        $quantity = max(1, (int) ($unit['quantity'] ?? 1));
+        if ($rented_counts === null) {
+            $rented_counts = self::get_rented_count_per_unit();
         }
-        return false;
+        return max(0, $quantity - ($rented_counts[(int) $unit_id] ?? 0));
     }
 
     /**
      * Get all available (not rented) units.
      */
     public static function get_available_units() {
-        $all_units = self::get_units(['per_page' => 1000]);
-        $available = [];
+        $all_units     = self::get_units(['per_page' => 1000]);
+        $rented_counts = self::get_rented_count_per_unit();
+        $available     = [];
         foreach ($all_units as $unit) {
-            if (!self::is_unit_rented($unit['id'])) {
+            $qty    = max(1, (int) ($unit['quantity'] ?? 1));
+            $rented = $rented_counts[(int) $unit['id']] ?? 0;
+            if ($rented < $qty) {
+                $unit['available_slots'] = $qty - $rented;
                 $available[] = $unit;
             }
         }
@@ -189,24 +195,29 @@ class Purplebox_DB {
     }
 
     /**
-     * Get rented unit IDs from all active contracts.
+     * Returns [unit_id => rented_count] for all active contracts.
      */
-    public static function get_all_rented_unit_ids() {
+    public static function get_rented_count_per_unit() {
         global $wpdb;
-        $table = self::contracts_table();
-        $contracts = $wpdb->get_results(
-            "SELECT unit_ids FROM $table WHERE status = 'active'",
-            ARRAY_A
-        );
-
-        $rented = [];
-        foreach ($contracts as $c) {
-            $ids = json_decode($c['unit_ids'], true);
-            if (is_array($ids)) {
-                $rented = array_merge($rented, array_map('intval', $ids));
+        $table    = self::contracts_table();
+        $rows     = $wpdb->get_col("SELECT unit_ids FROM $table WHERE status = 'active'");
+        $counts   = [];
+        foreach ($rows as $json) {
+            $ids = json_decode($json, true);
+            if (!is_array($ids)) continue;
+            foreach ($ids as $id) {
+                $id = (int) $id;
+                $counts[$id] = ($counts[$id] ?? 0) + 1;
             }
         }
-        return array_unique($rented);
+        return $counts;
+    }
+
+    /**
+     * Get rented unit IDs from all active contracts (unique list).
+     */
+    public static function get_all_rented_unit_ids() {
+        return array_keys(self::get_rented_count_per_unit());
     }
 
     // ─── Tenants ───
