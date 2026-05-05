@@ -134,6 +134,7 @@ class Purplebox_DB {
             'floor'            => sanitize_text_field($data['floor'] ?? 'Ground'),
             'price'            => floatval($data['price'] ?? 0),
             'discounted_price' => !empty($data['discounted_price']) ? floatval($data['discounted_price']) : null,
+            'unit_group'       => !empty($data['unit_group']) ? sanitize_text_field($data['unit_group']) : null,
             'facility'         => sanitize_text_field($data['facility'] ?? 'PurpleBox Al Quoz'),
             'features'         => !empty($data['features']) ? wp_json_encode($data['features']) : null,
             'notes'            => sanitize_textarea_field($data['notes'] ?? ''),
@@ -764,6 +765,36 @@ class Purplebox_DB {
             ),
             ARRAY_A
         );
+    }
+
+    /**
+     * Get available/total counts for every unit_group.
+     * Returns [ 'groupName' => ['total' => N, 'available' => M], ... ]
+     */
+    public static function get_group_stock() {
+        global $wpdb;
+        $table = self::units_table();
+
+        $units = $wpdb->get_results(
+            "SELECT id, unit_group FROM $table WHERE unit_group IS NOT NULL AND unit_group != ''",
+            ARRAY_A
+        );
+        if (empty($units)) return [];
+
+        $rented_ids = self::get_all_rented_unit_ids();
+        $stocks = [];
+
+        foreach ($units as $u) {
+            $g = $u['unit_group'];
+            if (!isset($stocks[$g])) {
+                $stocks[$g] = ['total' => 0, 'available' => 0];
+            }
+            $stocks[$g]['total']++;
+            if (!in_array((int) $u['id'], $rented_ids)) {
+                $stocks[$g]['available']++;
+            }
+        }
+        return $stocks;
     }
 
     /**

@@ -10,6 +10,12 @@
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Inventory item deleted.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>
 
+    <?php if (isset($_GET['bulk_created'])) : ?>
+        <div class="notice notice-success is-dismissible"><p>
+            <?php printf(esc_html__('%d units created successfully.', 'purplebox-storage'), (int) $_GET['bulk_created']); ?>
+        </p></div>
+    <?php endif; ?>
+
     <form method="get">
         <input type="hidden" name="page" value="purplebox-units">
         <?php $table->search_box(__('Search', 'purplebox-storage'), 'unit'); ?>

@@ -30,6 +30,7 @@ class Purplebox_Activator {
             floor varchar(20) NOT NULL DEFAULT 'Ground',
             price decimal(10,2) NOT NULL DEFAULT 0,
             discounted_price decimal(10,2) DEFAULT NULL,
+            unit_group varchar(100) DEFAULT NULL,
             facility varchar(100) NOT NULL DEFAULT 'PurpleBox Al Quoz',
             features text DEFAULT NULL,
             notes text DEFAULT NULL,

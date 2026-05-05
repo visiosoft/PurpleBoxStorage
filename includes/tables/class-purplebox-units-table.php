@@ -9,7 +9,8 @@ if (!class_exists('WP_List_Table')) {
 
 class Purplebox_Units_Table extends WP_List_Table {
 
-    private $rented_ids = [];
+    private $rented_ids  = [];
+    private $group_stock = [];
 
     public function __construct() {
         parent::__construct([
@@ -27,6 +28,7 @@ class Purplebox_Units_Table extends WP_List_Table {
             'size_category' => __('Size', 'purplebox-storage'),
             'floor'         => __('Floor', 'purplebox-storage'),
             'price'         => __('Price (AED)', 'purplebox-storage'),
+            'stock'         => __('Stock', 'purplebox-storage'),
             'status'        => __('Status', 'purplebox-storage'),
         ];
     }
@@ -63,7 +65,8 @@ class Purplebox_Units_Table extends WP_List_Table {
 
     public function prepare_items() {
         $this->process_bulk_action();
-        $this->rented_ids = Purplebox_DB::get_all_rented_unit_ids();
+        $this->rented_ids  = Purplebox_DB::get_all_rented_unit_ids();
+        $this->group_stock = Purplebox_DB::get_group_stock();
 
         $per_page = 30;
         $current_page = $this->get_pagenum();
@@ -152,6 +155,32 @@ class Purplebox_Units_Table extends WP_List_Table {
                  . '<strong style="color:#00691f;">AED ' . number_format((float) $item['discounted_price'], 2) . '</strong>';
         }
         return $out;
+    }
+
+    public function column_stock($item) {
+        $group = $item['unit_group'] ?? '';
+        if (empty($group) || !isset($this->group_stock[$group])) {
+            return '<span style="color:#50575e;">—</span>';
+        }
+        $s     = $this->group_stock[$group];
+        $avail = (int) $s['available'];
+        $total = (int) $s['total'];
+
+        if ($avail === 0) {
+            $color = '#b32d2e';
+            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
+        } elseif ($avail <= max(1, intval($total * 0.2))) {
+            $color = '#8a6500';
+            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
+        } else {
+            $color = '#00691f';
+            $label = sprintf(__('%d / %d left', 'purplebox-storage'), $avail, $total);
+        }
+        return sprintf(
+            '<span style="font-weight:600; color:%s;">%s</span>',
+            esc_attr($color),
+            esc_html($label)
+        );
     }
 
     public function column_status($item) {
