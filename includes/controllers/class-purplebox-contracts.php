@@ -248,8 +248,9 @@ class Purplebox_Contracts_Controller {
 
                 const font     = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 const fontSize = 20;
-                // y: height - (top-of-box from page top) + vertical offset to centre text in box
-                const off = 22; // pushes text up from box bottom edge into visual centre
+                // off: calibrated so text sits inside each box.
+                // -32 = bottom edge, +22 = above box, so ~-5 centres nicely.
+                const off = -5;
                 const fields = [
                     { text: data.full_name, x: 270,  y: height - 1096 + off },
                     { text: data.address,   x: 270,  y: height - 1211 + off },
