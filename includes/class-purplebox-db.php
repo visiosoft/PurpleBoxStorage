@@ -578,10 +578,22 @@ class Purplebox_DB {
         global $wpdb;
         $units_table = self::units_table();
 
-        $total_units = (int) $wpdb->get_var("SELECT COUNT(*) FROM $units_table");
-        $rented_ids = self::get_all_rented_unit_ids();
-        $total_rented = count($rented_ids);
-        $total_available = $total_units - $total_rented;
+        // Total stock = sum of all unit quantities
+        $total_units = (int) $wpdb->get_var("SELECT COALESCE(SUM(quantity), 0) FROM $units_table");
+
+        // Rented slots = count of how many times each unit appears in active contracts
+        $rented_counts = self::get_rented_count_per_unit();
+
+        // Total rented slots (capped at each unit's quantity)
+        $all_units_qty = $wpdb->get_results("SELECT id, quantity FROM $units_table", ARRAY_A);
+        $total_rented = 0;
+        foreach ($all_units_qty as $u) {
+            $qty    = max(1, (int) $u['quantity']);
+            $rented = min($qty, $rented_counts[(int) $u['id']] ?? 0);
+            $total_rented += $rented;
+        }
+
+        $total_available = max(0, $total_units - $total_rented);
         $occupancy = $total_units > 0 ? round(($total_rented / $total_units) * 100, 1) : 0;
 
         $contracts_table = self::contracts_table();
@@ -595,12 +607,12 @@ class Purplebox_DB {
         );
 
         return [
-            'total'          => $total_units,
-            'available'      => max(0, $total_available),
-            'rented'         => $total_rented,
-            'occupancy'      => $occupancy,
+            'total'               => $total_units,
+            'available'           => $total_available,
+            'rented'              => $total_rented,
+            'occupancy'           => $occupancy,
             'avg_contract_months' => $avg_months,
-            'active_tenants' => $active_tenants,
+            'active_tenants'      => $active_tenants,
         ];
     }
 
