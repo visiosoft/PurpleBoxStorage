@@ -252,18 +252,18 @@ class Purplebox_Contracts_Controller {
                 // -32 = bottom edge, +22 = above box, so ~-5 centres nicely.
                 const off = -5;
                 const fields = [
-                    { text: data.full_name, x: 410,  y: height - 1096 + off },
-                    { text: data.address,   x: 410,  y: height - 1211 + off },
-                    { text: data.contact,   x: 490,  y: height - 1326 + off },
-                    { text: data.email,     x: 1380, y: height - 1326 + off },
-                    { text: data.emergency, x: 520,  y: height - 1441 + off },
-                    { text: data.move_in,   x: 440,  y: height - 1556 + off },
-                    { text: data.move_out,  x: 1375, y: height - 1556 + off },
-                    { text: data.unit_size, x: 450,  y: height - 1671 + off },
+                    { text: data.full_name, x: 440,  y: height - 1096 + off },
+                    { text: data.address,   x: 440,  y: height - 1211 + off },
+                    { text: data.contact,   x: 520,  y: height - 1326 + off },
+                    { text: data.email,     x: 1410, y: height - 1326 + off },
+                    { text: data.emergency, x: 550,  y: height - 1441 + off },
+                    { text: data.move_in,   x: 470,  y: height - 1556 + off },
+                    { text: data.move_out,  x: 1405, y: height - 1556 + off },
+                    { text: data.unit_size, x: 480,  y: height - 1671 + off },
                     // Three separate access boxes across the row
-                    { text: data.access1,   x: 380,  y: height - 1789 + off },
-                    { text: data.access2,   x: 900,  y: height - 1789 + off },
-                    { text: data.access3,   x: 1420, y: height - 1789 + off },
+                    { text: data.access1,   x: 410,  y: height - 1789 + off },
+                    { text: data.access2,   x: 930,  y: height - 1789 + off },
+                    { text: data.access3,   x: 1450, y: height - 1789 + off },
                 ];
 
                 for (const f of fields) {
