@@ -153,24 +153,29 @@
 
                             <?php if (!empty($row['units'])) : ?>
                             <div style="width:100%; margin-top:8px; padding-left:4px; display:flex; flex-wrap:wrap; gap:6px;">
-                                <?php foreach ($row['units'] as $u) : ?>
-                                    <span style="
-                                        display:inline-flex; align-items:center; gap:5px;
-                                        padding:3px 9px; border-radius:12px; font-size:12px;
-                                        <?php echo $u['is_rented']
-                                            ? 'background:#e8f0fe; color:#1e4ea1;'
-                                            : 'background:#e8f5e9; color:#1b5e20;'; ?>
-                                    ">
-                                        <?php if ($u['is_rented']) : ?>
-                                            <span style="font-size:9px;">●</span>
-                                        <?php else : ?>
-                                            <span style="font-size:9px; color:#00691f;">●</span>
-                                        <?php endif; ?>
+                                <?php foreach ($row['units'] as $u) :
+                                    $avail = (int) ($u['available'] ?? 0);
+                                    $qty   = (int) ($u['quantity'] ?? 1);
+                                    $full  = ($avail === 0);
+                                    $low   = (!$full && $avail <= max(1, (int)($qty * 0.25)));
+                                    if ($full) {
+                                        $bg = '#fce8e6'; $fg = '#b32d2e'; $dot = '#b32d2e';
+                                    } elseif ($low) {
+                                        $bg = '#fef3cd'; $fg = '#7a5200'; $dot = '#8a6500';
+                                    } else {
+                                        $bg = '#e8f5e9'; $fg = '#1b5e20'; $dot = '#00691f';
+                                    }
+                                ?>
+                                    <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:12px; font-size:12px; background:<?php echo $bg; ?>; color:<?php echo $fg; ?>;">
+                                        <span style="font-size:9px; color:<?php echo $dot; ?>;">●</span>
                                         <strong><?php echo esc_html($u['unit_number']); ?></strong>
                                         <?php if (!empty($u['display_name'])) : ?>
                                             <span style="opacity:.8;"><?php echo esc_html($u['display_name']); ?></span>
                                         <?php endif; ?>
                                         <span style="opacity:.6; font-size:11px;"><?php echo esc_html($u['floor']); ?></span>
+                                        <?php if ($qty > 1) : ?>
+                                            <span style="font-size:11px; font-weight:600;"><?php echo $avail . '/' . $qty; ?></span>
+                                        <?php endif; ?>
                                     </span>
                                 <?php endforeach; ?>
                             </div>

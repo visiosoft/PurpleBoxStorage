@@ -684,28 +684,33 @@ class Purplebox_DB {
         global $wpdb;
         $table = self::units_table();
 
-        $all_units  = $wpdb->get_results(
-            "SELECT id, unit_number, display_name, size_category, floor FROM $table ORDER BY unit_number ASC",
+        $all_units     = $wpdb->get_results(
+            "SELECT id, unit_number, display_name, size_category, floor, COALESCE(quantity,1) AS quantity FROM $table ORDER BY unit_number ASC",
             ARRAY_A
         );
-        $rented_ids = self::get_all_rented_unit_ids();
+        $rented_counts = self::get_rented_count_per_unit();
 
         $groups = [];
         foreach ($all_units as $unit) {
-            $size = $unit['size_category'];
+            $size   = $unit['size_category'];
+            $qty    = max(1, (int) $unit['quantity']);
+            $rented = min($qty, $rented_counts[(int) $unit['id']] ?? 0);
+            $avail  = $qty - $rented;
+
             if (!isset($groups[$size])) {
                 $groups[$size] = ['size_category' => $size, 'total' => 0, 'available' => 0, 'units' => []];
             }
-            $is_rented = in_array((int) $unit['id'], $rented_ids);
-            $groups[$size]['total']++;
-            if (!$is_rented) {
-                $groups[$size]['available']++;
-            }
+
+            $groups[$size]['total']     += $qty;
+            $groups[$size]['available'] += $avail;
+
             $groups[$size]['units'][] = [
                 'unit_number'  => $unit['unit_number'],
                 'display_name' => $unit['display_name'],
                 'floor'        => $unit['floor'],
-                'is_rented'    => $is_rented,
+                'quantity'     => $qty,
+                'available'    => $avail,
+                'is_rented'    => ($avail === 0),
             ];
         }
 
