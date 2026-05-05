@@ -1,0 +1,246 @@
+/* PurpleBox Storage — WordPress Admin Styles */
+/* Scoped under .purplebox-wrap to avoid conflicts */
+
+.purplebox-wrap .at-a-glance {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.purplebox-wrap .glance-tile {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    padding: 12px 16px;
+    border-left: 4px solid #2271b1;
+}
+
+.purplebox-wrap .glance-tile .label {
+    font-size: 12px;
+    color: #50575e;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+}
+
+.purplebox-wrap .glance-tile .value {
+    font-size: 26px;
+    font-weight: 400;
+    color: #1d2327;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+.purplebox-wrap .glance-tile.success { border-left-color: #00a32a; }
+.purplebox-wrap .glance-tile.danger { border-left-color: #d63638; }
+.purplebox-wrap .glance-tile.warning { border-left-color: #dba617; }
+
+/* Dashboard widgets grid */
+.purplebox-wrap .dashboard-widgets {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 1100px) {
+    .purplebox-wrap .dashboard-widgets { grid-template-columns: 1fr; }
+    .purplebox-wrap .at-a-glance { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Availability bars */
+.purplebox-wrap .avail-row {
+    display: grid;
+    grid-template-columns: 110px 80px 1fr 70px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.purplebox-wrap .avail-row:last-child { border-bottom: 0; }
+.purplebox-wrap .avail-row .size { font-weight: 600; color: #1d2327; }
+.purplebox-wrap .avail-row .ratio { color: #50575e; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.purplebox-wrap .bar {
+    height: 10px;
+    background: #f0f0f1;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.purplebox-wrap .bar-fill { height: 100%; background: #2271b1; }
+.purplebox-wrap .bar-fill.full { background: #d63638; }
+.purplebox-wrap .bar-fill.low { background: #dba617; }
+
+.purplebox-wrap .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.purplebox-wrap .tag.full { background: #fcebec; color: #b32d2e; }
+.purplebox-wrap .tag.ok { background: #edfaef; color: #00691f; }
+.purplebox-wrap .tag.low { background: #fcf9e8; color: #8a6500; }
+
+/* Status pills */
+.purplebox-wrap .pill {
+    display: inline-block;
+    padding: 1px 9px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+}
+
+.purplebox-wrap .pill.available { background: #edfaef; color: #00691f; }
+.purplebox-wrap .pill.rented { background: #e6f0ff; color: #1e4ea1; }
+.purplebox-wrap .pill.maintenance { background: #fcf9e8; color: #8a6500; }
+.purplebox-wrap .pill.reserved { background: #f3e8ff; color: #5b21b6; }
+.purplebox-wrap .pill.ended { background: #f0f0f1; color: #50575e; }
+.purplebox-wrap .pill.active { background: #edfaef; color: #00691f; }
+.purplebox-wrap .pill.out_of_service { background: #fcebec; color: #b32d2e; }
+
+/* Activity feed */
+.purplebox-wrap .activity-list { list-style: none; padding: 0; margin: 0; }
+
+.purplebox-wrap .activity-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f1;
+    font-size: 13px;
+    color: #2c3338;
+}
+
+.purplebox-wrap .activity-list li:last-child { border-bottom: 0; }
+
+.purplebox-wrap .activity-list .time {
+    color: #50575e;
+    font-size: 12px;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Wizard steps */
+.purplebox-wrap .wizard-steps {
+    display: flex;
+    margin-bottom: 18px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.purplebox-wrap .wizard-step {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #50575e;
+    border-right: 1px solid #c3c4c7;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.purplebox-wrap .wizard-step:last-child { border-right: 0; }
+
+.purplebox-wrap .wizard-step.active {
+    background: #f6f7f7;
+    color: #1d2327;
+    font-weight: 600;
+    border-bottom: 3px solid #6d28d9;
+}
+
+.purplebox-wrap .wizard-step.done { color: #00691f; }
+
+.purplebox-wrap .wizard-step .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f0f0f1;
+    color: #1d2327;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.purplebox-wrap .wizard-step.active .num { background: #6d28d9; color: #fff; }
+.purplebox-wrap .wizard-step.done .num { background: #00a32a; color: #fff; }
+
+/* Form enhancements */
+.purplebox-wrap .form-table .checkbox-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+}
+
+.purplebox-wrap .form-table .checkbox-list label {
+    font-weight: 400;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.purplebox-wrap .form-table .inline-fields {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.purplebox-wrap .form-table .inline-fields input { max-width: 140px; }
+
+.purplebox-wrap .submit-row {
+    padding: 16px 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.purplebox-wrap .submit-row .button-link-delete { margin-left: auto; }
+
+/* Wizard panels */
+.purplebox-wrap .wizard-panel { display: none; }
+.purplebox-wrap .wizard-panel.active { display: block; }
+
+/* Postbox overrides for dashboard */
+.purplebox-wrap .postbox {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+
+.purplebox-wrap .postbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.purplebox-wrap .postbox-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+    color: #1d2327;
+    line-height: 1.4;
+}
+
+.purplebox-wrap .postbox .inside { padding: 12px; }
+
+/* Brand accent in menu */
+#adminmenu .toplevel_page_purplebox-dashboard .wp-menu-image::before {
+    color: #a78bfa;
+}
+
+#adminmenu .toplevel_page_purplebox-dashboard.current .wp-menu-image::before,
+#adminmenu .toplevel_page_purplebox-dashboard:hover .wp-menu-image::before {
+    color: #6d28d9;
+}

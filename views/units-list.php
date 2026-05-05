@@ -1,0 +1,18 @@
+<?php if (!defined('ABSPATH')) exit; ?>
+<div class="wrap purplebox-wrap">
+    <h1 class="wp-heading-inline"><?php esc_html_e('Storage Inventory', 'purplebox-storage'); ?></h1>
+    <a href="<?php echo esc_url(admin_url('admin.php?page=purplebox-unit-edit')); ?>" class="page-title-action">
+        <?php esc_html_e('Add Inventory', 'purplebox-storage'); ?>
+    </a>
+    <hr class="wp-header-end">
+
+    <?php if (isset($_GET['deleted'])) : ?>
+        <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Inventory item deleted.', 'purplebox-storage'); ?></p></div>
+    <?php endif; ?>
+
+    <form method="get">
+        <input type="hidden" name="page" value="purplebox-units">
+        <?php $table->search_box(__('Search', 'purplebox-storage'), 'unit'); ?>
+        <?php $table->display(); ?>
+    </form>
+</div>
