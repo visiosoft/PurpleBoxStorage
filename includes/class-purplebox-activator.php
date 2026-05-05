@@ -83,6 +83,10 @@ class Purplebox_Activator {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
 
+        // Safety net: ensure columns added in later versions exist
+        // (covers cases where dbDelta silently skipped them)
+        self::ensure_columns($units_table, $tenants_table);
+
         update_option('purplebox_db_version', PURPLEBOX_VERSION);
 
         $upload_dir = wp_upload_dir();
@@ -90,6 +94,48 @@ class Purplebox_Activator {
         if (!file_exists($purplebox_dir)) {
             wp_mkdir_p($purplebox_dir);
             wp_mkdir_p($purplebox_dir . '/contracts');
+        }
+    }
+
+    /**
+     * Directly ALTER TABLE to add any columns that may be missing.
+     * Safe to run repeatedly — checks existence first.
+     */
+    public static function ensure_columns($units_table, $tenants_table) {
+        global $wpdb;
+
+        $units_columns = array_column(
+            $wpdb->get_results("SHOW COLUMNS FROM $units_table", ARRAY_A),
+            'Field'
+        );
+        $tenants_columns = array_column(
+            $wpdb->get_results("SHOW COLUMNS FROM $tenants_table", ARRAY_A),
+            'Field'
+        );
+
+        // Units table additions
+        $units_add = [
+            'display_name'     => "ALTER TABLE $units_table ADD COLUMN display_name varchar(200) DEFAULT NULL AFTER unit_number",
+            'discounted_price' => "ALTER TABLE $units_table ADD COLUMN discounted_price decimal(10,2) DEFAULT NULL AFTER price",
+            'quantity'         => "ALTER TABLE $units_table ADD COLUMN quantity int(11) NOT NULL DEFAULT 1 AFTER discounted_price",
+            'unit_group'       => "ALTER TABLE $units_table ADD COLUMN unit_group varchar(100) DEFAULT NULL AFTER quantity",
+        ];
+        foreach ($units_add as $col => $sql) {
+            if (!in_array($col, $units_columns)) {
+                $wpdb->query($sql);
+            }
+        }
+
+        // Tenants table additions
+        $tenants_add = [
+            'passport_number' => "ALTER TABLE $tenants_table ADD COLUMN passport_number varchar(30) DEFAULT NULL AFTER eid_expiry",
+            'passport_expiry' => "ALTER TABLE $tenants_table ADD COLUMN passport_expiry date DEFAULT NULL AFTER passport_number",
+            'access_persons'  => "ALTER TABLE $tenants_table ADD COLUMN access_persons text DEFAULT NULL AFTER address",
+        ];
+        foreach ($tenants_add as $col => $sql) {
+            if (!in_array($col, $tenants_columns)) {
+                $wpdb->query($sql);
+            }
         }
     }
 }
