@@ -104,12 +104,18 @@ class Purplebox_Activator {
     public static function ensure_columns($units_table, $tenants_table) {
         global $wpdb;
 
+        // Guard: if tables don't exist yet, skip — activate() will create them.
+        if (!$wpdb->get_var("SHOW TABLES LIKE '$units_table'") ||
+            !$wpdb->get_var("SHOW TABLES LIKE '$tenants_table'")) {
+            return;
+        }
+
         $units_columns = array_column(
-            $wpdb->get_results("SHOW COLUMNS FROM $units_table", ARRAY_A),
+            $wpdb->get_results("SHOW COLUMNS FROM $units_table", ARRAY_A) ?? [],
             'Field'
         );
         $tenants_columns = array_column(
-            $wpdb->get_results("SHOW COLUMNS FROM $tenants_table", ARRAY_A),
+            $wpdb->get_results("SHOW COLUMNS FROM $tenants_table", ARRAY_A) ?? [],
             'Field'
         );
 

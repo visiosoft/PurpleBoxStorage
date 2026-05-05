@@ -200,7 +200,7 @@ class Purplebox_DB {
     public static function get_rented_count_per_unit() {
         global $wpdb;
         $table    = self::contracts_table();
-        $rows     = $wpdb->get_col("SELECT unit_ids FROM $table WHERE status = 'active'");
+        $rows     = $wpdb->get_col("SELECT unit_ids FROM $table WHERE status = 'active'") ?? [];
         $counts   = [];
         foreach ($rows as $json) {
             $ids = json_decode($json, true);
@@ -585,7 +585,7 @@ class Purplebox_DB {
         $rented_counts = self::get_rented_count_per_unit();
 
         // Total rented slots (capped at each unit's quantity)
-        $all_units_qty = $wpdb->get_results("SELECT id, quantity FROM $units_table", ARRAY_A);
+        $all_units_qty = $wpdb->get_results("SELECT id, quantity FROM $units_table", ARRAY_A) ?? [];
         $total_rented = 0;
         foreach ($all_units_qty as $u) {
             $qty    = max(1, (int) $u['quantity']);
@@ -687,7 +687,7 @@ class Purplebox_DB {
         $all_units     = $wpdb->get_results(
             "SELECT id, unit_number, display_name, size_category, floor, COALESCE(quantity,1) AS quantity FROM $table ORDER BY unit_number ASC",
             ARRAY_A
-        );
+        ) ?? [];
         $rented_counts = self::get_rented_count_per_unit();
 
         $groups = [];
