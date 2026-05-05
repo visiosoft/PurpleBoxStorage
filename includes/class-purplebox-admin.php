@@ -9,8 +9,53 @@ class Purplebox_Admin {
         add_action('admin_menu', [$this, 'register_menus']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_init', [$this, 'handle_form_submissions']);
+        add_action('admin_notices', [$this, 'expiry_notices']);
         add_action('wp_ajax_purplebox_search_tenants', [$this, 'ajax_search_tenants']);
         add_action('wp_ajax_purplebox_available_units', [$this, 'ajax_available_units']);
+    }
+
+    public function expiry_notices() {
+        // Only show on PurpleBox pages
+        $screen = get_current_screen();
+        if (!$screen || strpos($screen->id, 'purplebox') === false) {
+            return;
+        }
+
+        $expiring = Purplebox_DB::get_expiring_contracts(15);
+        if (empty($expiring)) {
+            return;
+        }
+
+        foreach ($expiring as $c) {
+            $units     = Purplebox_DB::get_unit_numbers_from_ids($c['unit_ids'] ?? '[]');
+            $days_left = (int) $c['days_left'];
+            $view_url  = admin_url('admin.php?page=purplebox-contracts&action=view&contract_id=' . $c['id']);
+            $date      = date('d/m/Y', strtotime($c['move_out_date']));
+
+            if ($days_left === 0) {
+                $when = __('expires <strong>today</strong>', 'purplebox-storage');
+                $type = 'notice-error';
+            } elseif ($days_left === 1) {
+                $when = __('expires <strong>tomorrow</strong>', 'purplebox-storage');
+                $type = 'notice-error';
+            } elseif ($days_left <= 7) {
+                $when = sprintf(__('expires in <strong>%d days</strong> (%s)', 'purplebox-storage'), $days_left, $date);
+                $type = 'notice-warning';
+            } else {
+                $when = sprintf(__('expires in <strong>%d days</strong> (%s)', 'purplebox-storage'), $days_left, $date);
+                $type = 'notice-info';
+            }
+
+            printf(
+                '<div class="notice %s is-dismissible"><p>⚠️ <strong>%s</strong> — %s — %s. <a href="%s">%s</a></p></div>',
+                esc_attr($type),
+                esc_html($c['tenant_name']),
+                esc_html($units),
+                wp_kses($when, ['strong' => []]),
+                esc_url($view_url),
+                esc_html__('View Contract', 'purplebox-storage')
+            );
+        }
     }
 
     public function register_menus() {

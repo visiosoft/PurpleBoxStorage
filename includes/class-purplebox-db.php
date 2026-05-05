@@ -767,6 +767,31 @@ class Purplebox_DB {
     }
 
     /**
+     * Get active contracts expiring within $days days.
+     */
+    public static function get_expiring_contracts($days = 15) {
+        global $wpdb;
+        $ct = self::contracts_table();
+        $tt = self::tenants_table();
+
+        $today    = current_time('Y-m-d');
+        $deadline = date('Y-m-d', strtotime("+{$days} days", strtotime($today)));
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT c.id, c.unit_ids, c.move_out_date,
+                    t.full_name AS tenant_name, t.id AS tenant_id,
+                    DATEDIFF(c.move_out_date, %s) AS days_left
+             FROM {$ct} c
+             JOIN {$tt} t ON t.id = c.tenant_id
+             WHERE c.status = 'active'
+               AND c.move_out_date IS NOT NULL
+               AND c.move_out_date BETWEEN %s AND %s
+             ORDER BY c.move_out_date ASC",
+            $today, $today, $deadline
+        ), ARRAY_A);
+    }
+
+    /**
      * Get unit numbers string from JSON unit_ids.
      */
     public static function get_unit_numbers_from_ids($unit_ids_json) {
