@@ -183,6 +183,22 @@ class Purplebox_Contracts_Controller {
             return $ts ? date('d/m/Y', $ts) : $d;
         };
 
+        // Build access person fields (name + phone + ID type/number)
+        $access_field = function($p) {
+            if (empty($p)) return ['name' => '', 'phone' => '', 'id' => ''];
+            $id = '';
+            if (!empty($p['id_type']) && !empty($p['id_number'])) {
+                $id = $p['id_type'] . ': ' . $p['id_number'];
+            } elseif (!empty($p['id_number'])) {
+                $id = $p['id_number'];
+            }
+            return [
+                'name'  => $p['name']  ?? '',
+                'phone' => $p['phone'] ?? '',
+                'id'    => $id,
+            ];
+        };
+
         $data = [
             'full_name' => $tenant['full_name']       ?? '',
             'address'   => $tenant['address']         ?? '',
@@ -192,9 +208,9 @@ class Purplebox_Contracts_Controller {
             'move_in'   => $fmt_date($contract['move_in_date']  ?? ''),
             'move_out'  => $fmt_date($contract['move_out_date'] ?? ''),
             'unit_size' => $unit_label,
-            'access1'   => $access_persons[0]['name'] ?? '',
-            'access2'   => $access_persons[1]['name'] ?? '',
-            'access3'   => $access_persons[2]['name'] ?? '',
+            'access1'   => $access_field($access_persons[0] ?? []),
+            'access2'   => $access_field($access_persons[1] ?? []),
+            'access3'   => $access_field($access_persons[2] ?? []),
         ];
 
         $pdf_path    = PURPLEBOX_PLUGIN_DIR . 'Customer Agreement.pdf';
@@ -260,10 +276,6 @@ class Purplebox_Contracts_Controller {
                     { text: data.move_in,   x: 470,  y: height - 1556 + off },
                     { text: data.move_out,  x: 1405, y: height - 1556 + off },
                     { text: data.unit_size, x: 480,  y: height - 1671 + off },
-                    // Three separate access boxes across the row
-                    { text: data.access1,   x: 410,  y: height - 1789 + off },
-                    { text: data.access2,   x: 930,  y: height - 1789 + off },
-                    { text: data.access3,   x: 1450, y: height - 1789 + off },
                 ];
 
                 for (const f of fields) {
@@ -275,6 +287,23 @@ class Purplebox_Contracts_Controller {
                         color: PDFLib.rgb(0, 0, 0),
                     });
                 }
+
+                // Access persons: name (bold-size), phone + ID smaller below
+                const accessXs = [410, 930, 1450];
+                const accessBase = height - 1789 + off;
+                const subSize = 16;
+                [data.access1, data.access2, data.access3].forEach((ap, i) => {
+                    const x = accessXs[i];
+                    if (ap.name) {
+                        page1.drawText(ap.name, { x, y: accessBase,        size: fontSize, font, color: PDFLib.rgb(0,0,0) });
+                    }
+                    if (ap.phone) {
+                        page1.drawText(ap.phone, { x, y: accessBase - 28,  size: subSize,  font, color: PDFLib.rgb(0,0,0) });
+                    }
+                    if (ap.id) {
+                        page1.drawText(ap.id,    { x, y: accessBase - 52,  size: subSize,  font, color: PDFLib.rgb(0,0,0) });
+                    }
+                });
 
                 const filled  = await pdfDoc.save();
                 const blob    = new Blob([filled], { type: 'application/pdf' });
