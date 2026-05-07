@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Storage
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 2.4.0
+ * Version: 2.4.1
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '2.4.0');
+define('PURPLEBOX_VERSION', '2.4.1');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -47,17 +47,32 @@ register_activation_hook(__FILE__, ['Purplebox_Activator', 'activate']);
 register_deactivation_hook(__FILE__, ['Purplebox_Deactivator', 'deactivate']);
 
 /**
- * Helper: check if a user is a PurpleBox Manager (but not admin).
+ * Helper: check if current user (or given user) is a PurpleBox Manager but not admin.
  */
-function purplebox_is_pb_manager($user) {
-    if (!$user instanceof WP_User) return false;
-    $roles = (array) $user->roles;
+function purplebox_is_pb_manager($user = null) {
+    if ($user === null) {
+        $roles = (array) wp_get_current_user()->roles;
+    } elseif ($user instanceof WP_User) {
+        $roles = (array) $user->roles;
+    } else {
+        return false;
+    }
     return in_array('purplebox_manager', $roles, true) && !in_array('administrator', $roles, true);
 }
 
 /**
+ * WooCommerce blocks wp-admin for users without edit_posts/manage_woocommerce.
+ * Tell WooCommerce NOT to prevent PurpleBox Manager from accessing wp-admin.
+ */
+add_filter('woocommerce_prevent_admin_access', function ($prevent) {
+    if (purplebox_is_pb_manager()) {
+        return false;
+    }
+    return $prevent;
+});
+
+/**
  * wp-login.php redirect (standard WP login).
- * High priority (9999) to run after WooCommerce's own login_redirect hook.
  */
 add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $user) {
     if (purplebox_is_pb_manager($user)) {
@@ -67,8 +82,7 @@ add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $us
 }, 9999, 3);
 
 /**
- * WooCommerce frontend login form redirect.
- * Fires when user logs in via /my-account page.
+ * WooCommerce frontend login form redirect (/my-account login).
  */
 add_filter('woocommerce_login_redirect', function ($redirect, $user) {
     if (purplebox_is_pb_manager($user)) {
