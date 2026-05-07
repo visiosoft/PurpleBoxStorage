@@ -44,18 +44,18 @@ class Purplebox_Units_Controller {
         }
 
         $data = [
-            'id'               => absint($_POST['unit_id'] ?? 0),
-            'unit_number'      => sanitize_text_field($_POST['unit_number'] ?? ''),
-            'display_name'     => $_POST['display_name'] ?? '',
-            'size_category'    => $_POST['size_category'] ?? '',
-            'custom_size'      => $_POST['custom_size'] ?? '',
-            'floor'            => $_POST['floor'] ?? 'Ground',
-            'price'            => $_POST['price'] ?? 0,
-            'discounted_price' => $_POST['discounted_price'] ?? '',
-            'quantity'         => absint($_POST['quantity'] ?? 1),
-            'facility'         => $_POST['facility'] ?? '',
-            'features'         => $_POST['features'] ?? [],
-            'notes'            => $_POST['notes'] ?? '',
+            'id'           => absint($_POST['unit_id'] ?? 0),
+            'unit_number'  => sanitize_text_field($_POST['unit_number'] ?? ''),
+            'display_name' => $_POST['display_name'] ?? '',
+            'size_category'=> $_POST['size_category'] ?? '',
+            'custom_size'  => $_POST['custom_size'] ?? '',
+            'floor'        => $_POST['floor'] ?? 'Ground',
+            'price'        => $_POST['price'] ?? 0,
+            'discount_pct' => $_POST['discount_pct'] ?? '',
+            'quantity'     => 1,
+            'facility'     => $_POST['facility'] ?? '',
+            'features'     => $_POST['features'] ?? [],
+            'notes'        => $_POST['notes'] ?? '',
         ];
 
         $id = Purplebox_DB::save_unit($data);

@@ -12,12 +12,6 @@
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Unit saved.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>
 
-    <?php if (isset($_GET['bulk_created'])) : ?>
-        <div class="notice notice-success is-dismissible"><p>
-            <?php printf(esc_html__('%d units created successfully.', 'purplebox-storage'), (int) $_GET['bulk_created']); ?>
-        </p></div>
-    <?php endif; ?>
-
     <?php if ($unit && $is_rented) : ?>
         <div class="notice notice-warning"><p><?php esc_html_e('This unit is currently rented under an active contract.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>
@@ -46,20 +40,6 @@
                             <p class="description"><?php esc_html_e('Internal reference code. Must be unique.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
-                    <tr>
-                        <th><label for="quantity"><?php esc_html_e('Quantity', 'purplebox-storage'); ?></label></th>
-                        <td>
-                            <input type="number" id="quantity" name="quantity" value="<?php echo esc_attr($unit['quantity'] ?? 1); ?>" min="1" max="500" class="small-text">
-                            <p class="description"><?php esc_html_e('Total number of this unit type available. Stock reduces automatically as contracts are created.', 'purplebox-storage'); ?></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="display_name"><?php esc_html_e('Display Name', 'purplebox-storage'); ?></label></th>
-                        <td>
-                            <input type="text" id="display_name" name="display_name" value="<?php echo esc_attr($unit['display_name'] ?? ''); ?>" class="large-text" placeholder="<?php esc_attr_e('e.g. Ground Floor 20sqf Near Door, Small Corner Unit', 'purplebox-storage'); ?>">
-                            <p class="description"><?php esc_html_e('Friendly label shown on contracts and listings. Leave blank to use the unit number.', 'purplebox-storage'); ?></p>
-                        </td>
-                    </tr>
                 </table>
             </div>
         </div>
@@ -82,6 +62,13 @@
                                 ?>
                             </select>
                             <p class="description"><?php esc_html_e('Used for grouping and filtering in the dashboard.', 'purplebox-storage'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="display_name"><?php esc_html_e('Size Label', 'purplebox-storage'); ?></label></th>
+                        <td>
+                            <input type="text" id="display_name" name="display_name" value="<?php echo esc_attr($unit['display_name'] ?? ''); ?>" class="regular-text" placeholder="<?php esc_attr_e('e.g. Small, Budget Unit, Premium Corner', 'purplebox-storage'); ?>">
+                            <p class="description"><?php esc_html_e('Friendly name for this size — shown on contracts and the dashboard instead of the sq.ft. category.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -125,29 +112,101 @@
                         <td>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="color:#50575e;">AED</span>
-                                <input type="number" id="price" name="price" value="<?php echo esc_attr($unit['price'] ?? ''); ?>" step="0.01" min="0" class="regular-text" placeholder="0.00">
+                                <input type="number" id="price" name="price"
+                                       value="<?php echo esc_attr($unit['price'] ?? ''); ?>"
+                                       step="0.01" min="0" class="regular-text" placeholder="0.00"
+                                       oninput="pbUpdateDiscount()">
                             </div>
-                            <p class="description"><?php esc_html_e('Standard rental price for this unit. Increase for premium locations (near door, corner, etc).', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="discounted_price"><?php esc_html_e('Discounted Price (AED)', 'purplebox-storage'); ?></label></th>
+                        <th><label><?php esc_html_e('Discount', 'purplebox-storage'); ?></label></th>
                         <td>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="color:#50575e;">AED</span>
-                                <input type="number" id="discounted_price" name="discounted_price" value="<?php echo esc_attr($unit['discounted_price'] ?? ''); ?>" step="0.01" min="0" class="regular-text" placeholder="0.00">
-                            </div>
-                            <p class="description"><?php esc_html_e('Optional. Leave blank if no discount applies.', 'purplebox-storage'); ?></p>
                             <?php
-                            if (!empty($unit['price']) && !empty($unit['discounted_price'])) :
-                                $saving = (float) $unit['price'] - (float) $unit['discounted_price'];
-                                $pct    = round(($saving / (float) $unit['price']) * 100);
-                                if ($saving > 0) :
+                            $saved_pct = isset($unit['discount_pct']) && $unit['discount_pct'] !== null
+                                         ? (float) $unit['discount_pct'] : '';
+                            $presets = [5, 10, 15, 20, 25, 30];
                             ?>
-                                <p style="margin-top:6px; color:#00691f;">
-                                    <?php printf(esc_html__('Saving: AED %s (%d%% off)', 'purplebox-storage'), number_format($saving, 2), $pct); ?>
-                                </p>
-                            <?php endif; endif; ?>
+                            <!-- Preset buttons -->
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;" id="pb-pct-presets">
+                                <button type="button" class="button pb-pct-btn" data-pct="0"
+                                    style="<?php echo $saved_pct === '' || $saved_pct == 0 ? 'background:#1d2327;color:#fff;border-color:#1d2327;' : ''; ?>">
+                                    <?php esc_html_e('No discount', 'purplebox-storage'); ?>
+                                </button>
+                                <?php foreach ($presets as $p) : ?>
+                                <button type="button" class="button pb-pct-btn" data-pct="<?php echo $p; ?>"
+                                    style="<?php echo (string)$saved_pct === (string)$p ? 'background:#1d2327;color:#fff;border-color:#1d2327;' : ''; ?>">
+                                    <?php echo $p; ?>%
+                                </button>
+                                <?php endforeach; ?>
+                                <button type="button" class="button pb-pct-btn" data-pct="custom"
+                                    style="<?php echo ($saved_pct !== '' && $saved_pct > 0 && !in_array((int)$saved_pct, $presets)) ? 'background:#1d2327;color:#fff;border-color:#1d2327;' : ''; ?>">
+                                    <?php esc_html_e('Custom %', 'purplebox-storage'); ?>
+                                </button>
+                            </div>
+
+                            <!-- Hidden real input -->
+                            <input type="hidden" id="discount_pct" name="discount_pct"
+                                   value="<?php echo esc_attr($saved_pct); ?>">
+
+                            <!-- Custom % text input (shown only for custom) -->
+                            <div id="pb-custom-pct-wrap" style="display:<?php echo ($saved_pct !== '' && $saved_pct > 0 && !in_array((int)$saved_pct, $presets)) ? 'flex' : 'none'; ?>; align-items:center; gap:6px; margin-bottom:10px;">
+                                <input type="number" id="pb_custom_pct_input" min="0" max="100" step="0.01"
+                                       value="<?php echo esc_attr($saved_pct); ?>"
+                                       class="small-text" placeholder="e.g. 12"
+                                       oninput="pbSetCustomPct(this.value)">
+                                <span style="color:#50575e;">%</span>
+                            </div>
+
+                            <!-- Live preview -->
+                            <div id="pb-discount-preview" style="margin-top:4px; font-size:13px; color:#00691f; min-height:20px;"></div>
+
+                            <script>
+                            (function(){
+                                function pbGetPrice() {
+                                    return parseFloat(document.getElementById('price').value) || 0;
+                                }
+                                function pbSetPct(pct) {
+                                    document.getElementById('discount_pct').value = (pct === '' || pct === 0) ? '' : pct;
+                                    pbUpdatePreview(pct);
+                                }
+                                window.pbUpdateDiscount = function() { pbUpdatePreview(parseFloat(document.getElementById('discount_pct').value) || 0); };
+                                window.pbSetCustomPct  = function(val) { pbSetPct(parseFloat(val) || ''); };
+
+                                function pbUpdatePreview(pct) {
+                                    var price = pbGetPrice();
+                                    var el    = document.getElementById('pb-discount-preview');
+                                    if (!pct || !price) { el.textContent = ''; return; }
+                                    var disc  = price * (1 - pct / 100);
+                                    var save  = price - disc;
+                                    el.textContent = pct + '% off → AED ' + disc.toFixed(2) + ' (saving AED ' + save.toFixed(2) + ')';
+                                }
+
+                                document.querySelectorAll('.pb-pct-btn').forEach(function(btn){
+                                    btn.addEventListener('click', function(){
+                                        document.querySelectorAll('.pb-pct-btn').forEach(function(b){
+                                            b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+                                        });
+                                        this.style.background   = '#1d2327';
+                                        this.style.color        = '#fff';
+                                        this.style.borderColor  = '#1d2327';
+
+                                        var pct = this.dataset.pct;
+                                        var wrap = document.getElementById('pb-custom-pct-wrap');
+                                        if (pct === 'custom') {
+                                            wrap.style.display = 'flex';
+                                            pbSetPct(parseFloat(document.getElementById('pb_custom_pct_input').value) || '');
+                                        } else {
+                                            wrap.style.display = 'none';
+                                            pbSetPct(pct === '0' ? '' : parseFloat(pct));
+                                        }
+                                    });
+                                });
+
+                                // Init preview on load
+                                pbUpdatePreview(parseFloat(document.getElementById('discount_pct').value) || 0);
+                            })();
+                            </script>
                         </td>
                     </tr>
                 </table>

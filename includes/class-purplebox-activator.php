@@ -30,6 +30,7 @@ class Purplebox_Activator {
             floor varchar(20) NOT NULL DEFAULT 'Ground',
             price decimal(10,2) NOT NULL DEFAULT 0,
             discounted_price decimal(10,2) DEFAULT NULL,
+            discount_pct decimal(5,2) DEFAULT NULL,
             quantity int(11) NOT NULL DEFAULT 1,
             unit_group varchar(100) DEFAULT NULL,
             facility varchar(100) NOT NULL DEFAULT 'PurpleBox Al Quoz',
@@ -123,7 +124,8 @@ class Purplebox_Activator {
         $units_add = [
             'display_name'     => "ALTER TABLE $units_table ADD COLUMN display_name varchar(200) DEFAULT NULL AFTER unit_number",
             'discounted_price' => "ALTER TABLE $units_table ADD COLUMN discounted_price decimal(10,2) DEFAULT NULL AFTER price",
-            'quantity'         => "ALTER TABLE $units_table ADD COLUMN quantity int(11) NOT NULL DEFAULT 1 AFTER discounted_price",
+            'discount_pct'     => "ALTER TABLE $units_table ADD COLUMN discount_pct decimal(5,2) DEFAULT NULL AFTER discounted_price",
+            'quantity'         => "ALTER TABLE $units_table ADD COLUMN quantity int(11) NOT NULL DEFAULT 1 AFTER discount_pct",
             'unit_group'       => "ALTER TABLE $units_table ADD COLUMN unit_group varchar(100) DEFAULT NULL AFTER quantity",
         ];
         foreach ($units_add as $col => $sql) {

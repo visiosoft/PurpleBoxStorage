@@ -126,14 +126,22 @@ class Purplebox_DB {
         global $wpdb;
         $table = self::units_table();
 
+        // Compute discounted_price from discount_pct if provided
+        $price        = floatval($data['price'] ?? 0);
+        $discount_pct = isset($data['discount_pct']) && $data['discount_pct'] !== '' ? floatval($data['discount_pct']) : null;
+        $disc_price   = ($discount_pct !== null && $price > 0)
+                        ? round($price * (1 - $discount_pct / 100), 2)
+                        : null;
+
         $fields = [
             'unit_number'      => sanitize_text_field($data['unit_number'] ?? ''),
             'display_name'     => !empty($data['display_name']) ? sanitize_text_field($data['display_name']) : null,
             'size_category'    => sanitize_text_field($data['size_category'] ?? ''),
             'custom_size'      => !empty($data['custom_size']) ? floatval($data['custom_size']) : null,
             'floor'            => sanitize_text_field($data['floor'] ?? 'Ground'),
-            'price'            => floatval($data['price'] ?? 0),
-            'discounted_price' => !empty($data['discounted_price']) ? floatval($data['discounted_price']) : null,
+            'price'            => $price,
+            'discount_pct'     => $discount_pct,
+            'discounted_price' => $disc_price,
             'quantity'         => max(1, absint($data['quantity'] ?? 1)),
             'facility'         => sanitize_text_field($data['facility'] ?? 'PurpleBox Al Quoz'),
             'features'         => !empty($data['features']) ? wp_json_encode($data['features']) : null,
