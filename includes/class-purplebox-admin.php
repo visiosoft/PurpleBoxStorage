@@ -265,35 +265,29 @@ class Purplebox_Admin {
 
     /**
      * For PurpleBox Manager (has manage_purplebox but NOT manage_options):
-     * strip all WP admin menus that don't belong to this plugin.
+     * - Remove all non-PurpleBox top-level menus
+     * - Remove Units/Inventory sub-pages from PurpleBox menu
      */
     public function restrict_admin_for_pb_manager() {
         if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
-            return; // Admins see everything
+            return; // Admins see everything as normal
         }
 
-        global $menu, $submenu;
+        global $menu;
 
-        // Collect all purplebox slugs to keep
-        $keep_slugs = [
-            'purplebox-dashboard',
-            'purplebox-units',
-            'purplebox-unit-edit',
-            'purplebox-tenants',
-            'purplebox-contracts',
-            'purplebox-contract-new',
-            'purplebox-reports',
-        ];
-
-        // Remove all top-level menu items except PurpleBox
-        foreach ($menu as $order => $item) {
+        // Remove every top-level menu that isn't PurpleBox
+        foreach ($menu as $item) {
             $slug = $item[2] ?? '';
-            if (!in_array($slug, $keep_slugs, true) && strpos($slug, 'purplebox') === false) {
+            if (strpos($slug, 'purplebox') === false) {
                 remove_menu_page($slug);
             }
         }
 
-        // Clean up admin bar items
+        // Remove Units/Inventory sub-pages (PurpleBox Manager has no need to manage units)
+        remove_submenu_page('purplebox-dashboard', 'purplebox-units');
+        remove_submenu_page('purplebox-dashboard', 'purplebox-unit-edit');
+
+        // Clean up admin bar
         add_action('admin_bar_menu', [$this, 'restrict_admin_bar_for_pb_manager'], 999);
     }
 
@@ -316,8 +310,10 @@ class Purplebox_Admin {
     }
 
     /**
-     * Redirect PurpleBox Manager away from WP Dashboard and unrelated pages
-     * to the PurpleBox Dashboard.
+     * Redirect PurpleBox Manager away from:
+     * - WP core dashboard
+     * - Non-purplebox pages
+     * - Units/Inventory pages (even if accessed by URL)
      */
     public function redirect_pb_manager_to_purplebox() {
         if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
@@ -329,8 +325,16 @@ class Purplebox_Admin {
             return;
         }
 
-        // If on the default WP dashboard or any non-purplebox page, redirect
+        // Block access to WP core pages and non-purplebox pages
         if ($screen->id === 'dashboard' || strpos($screen->id, 'purplebox') === false) {
+            wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
+            exit;
+        }
+
+        // Block direct URL access to Units/Inventory pages
+        $blocked_pages = ['purplebox-units', 'purplebox-unit-edit'];
+        $current_page  = sanitize_key($_GET['page'] ?? '');
+        if (in_array($current_page, $blocked_pages, true)) {
             wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
             exit;
         }
