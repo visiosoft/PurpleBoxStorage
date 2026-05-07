@@ -122,6 +122,15 @@ class Purplebox_Admin {
             'purplebox-contract-new',
             [$this, 'render_contract_new']
         );
+
+        add_submenu_page(
+            'purplebox-dashboard',
+            __('Reports', 'purplebox-storage'),
+            __('📊 Reports', 'purplebox-storage'),
+            'manage_options',
+            'purplebox-reports',
+            [$this, 'render_reports']
+        );
     }
 
     public function enqueue_assets($hook) {
@@ -207,6 +216,11 @@ class Purplebox_Admin {
     public function render_contract_new() {
         require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-contracts.php';
         Purplebox_Contracts_Controller::render_wizard();
+    }
+
+    public function render_reports() {
+        require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-reports.php';
+        Purplebox_Reports_Controller::render();
     }
 
     public function ajax_search_tenants() {

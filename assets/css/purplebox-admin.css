@@ -235,6 +235,152 @@
 
 .purplebox-wrap .postbox .inside { padding: 12px; }
 
+/* ── Reports ─────────────────────────────────────────────────────────────── */
+
+.pb-reports-wrap { max-width: 1400px; }
+
+/* Tab nav */
+.pb-report-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #c3c4c7;
+}
+
+.pb-report-tab {
+    display: inline-block;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #50575e;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-bottom: -2px;
+    border-radius: 3px 3px 0 0;
+    background: transparent;
+    transition: color .15s;
+}
+
+.pb-report-tab:hover { color: #1d2327; background: #f6f7f7; }
+
+.pb-report-tab.active {
+    color: #1d2327;
+    font-weight: 600;
+    background: #fff;
+    border-color: #c3c4c7;
+    border-bottom-color: #fff;
+}
+
+/* Toolbar */
+.pb-report-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pb-report-actions { display: flex; gap: 6px; }
+.pb-filter-select  { min-width: 130px; }
+.pb-record-count   { color: #50575e; font-size: 12px; margin: 0 0 8px; }
+.pb-empty          { color: #50575e; font-style: italic; padding: 20px 0; }
+
+/* Report tables */
+.pb-report-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.pb-report-table th { background: #f6f7f7; font-weight: 600; color: #1d2327; padding: 8px 10px; text-align: left; border-bottom: 2px solid #c3c4c7; white-space: nowrap; }
+.pb-report-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f1; vertical-align: top; }
+.pb-report-table tbody tr:hover { background: #f9f9f9; }
+.pb-report-table tbody tr:last-child td { border-bottom: 0; }
+
+/* Row highlights for expiring contracts */
+.pb-row-urgent  { background: #fff5f5 !important; }
+.pb-row-warning { background: #fffbf0 !important; }
+.pb-row-urgent:hover  { background: #ffeaea !important; }
+.pb-row-warning:hover { background: #fff6da !important; }
+
+/* Sub-row (contract history inside tenants) */
+.pb-sub-row td { background: #fafafa !important; }
+.pb-sub-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pb-sub-table th { background: #f0f0f1; padding: 5px 8px; font-weight: 600; border-bottom: 1px solid #dcdcde; }
+.pb-sub-table td { padding: 5px 8px; border-bottom: 1px solid #f0f0f1; }
+
+/* Forecast grid */
+.pb-forecast-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pb-forecast-box .postbox-header { border-bottom: 1px solid #dcdcde; }
+.pb-count-badge { display: inline-flex; align-items: center; justify-content: center; color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 12px; font-weight: 600; margin-right: 12px; }
+.pb-forecast-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pb-forecast-table th { background: #f6f7f7; padding: 7px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid #dcdcde; }
+.pb-forecast-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f1; }
+.pb-forecast-table tbody tr:last-child td { border-bottom: 0; }
+.pb-empty-inner { color: #50575e; font-style: italic; padding: 14px 12px; margin: 0; }
+
+/* Occupancy grid */
+.pb-occ-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 900px) {
+    .pb-forecast-grid { grid-template-columns: 1fr; }
+    .pb-occ-grid      { grid-template-columns: 1fr; }
+}
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+
+.pb-print-header { display: none; }
+
+@media print {
+    /* Hide WP chrome */
+    #wpadminbar, #adminmenuback, #adminmenuwrap, #wpfooter,
+    .wp-header-end, .notice, .update-nag,
+    #screen-meta, #screen-meta-links,
+    .pb-report-toolbar, .pb-report-tabs, .pb-record-count,
+    .no-print, .page-title-action, h1.wp-heading-inline { display: none !important; }
+
+    /* Show print header */
+    .pb-print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 0 10px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #1d2327;
+        font-size: 13px;
+    }
+
+    .pb-print-logo { font-size: 20px; font-weight: 700; color: #1d2327; }
+    .pb-print-meta { color: #50575e; }
+
+    /* Layout */
+    #wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; }
+    .purplebox-wrap { max-width: 100%; margin: 0; padding: 0; }
+    .pb-forecast-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .pb-occ-grid      { grid-template-columns: 1fr 1fr; }
+
+    /* Tables */
+    .pb-report-table,
+    .pb-forecast-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+    .pb-report-table th,
+    .pb-forecast-table th { background: #eee !important; color: #000 !important; padding: 5px 7px; border: 1px solid #ccc; }
+    .pb-report-table td,
+    .pb-forecast-table td { padding: 4px 7px; border: 1px solid #ddd; }
+    .pb-row-urgent  { background: #ffe8e8 !important; }
+    .pb-row-warning { background: #fff8e0 !important; }
+
+    /* Tiles */
+    .at-a-glance { grid-template-columns: repeat(3, 1fr) !important; }
+    .glance-tile { border: 1px solid #ccc; }
+
+    /* Pills */
+    .pill { border: 1px solid #ccc; background: transparent !important; color: #000 !important; }
+
+    /* Sub-rows: hide in print for cleaner output */
+    .pb-sub-row { display: none !important; }
+
+    /* Page breaks */
+    .postbox { page-break-inside: avoid; margin-bottom: 16px; }
+    .pb-forecast-box { page-break-inside: avoid; }
+}
+
 /* Brand accent in menu */
 #adminmenu .toplevel_page_purplebox-dashboard .wp-menu-image::before {
     color: #a78bfa;

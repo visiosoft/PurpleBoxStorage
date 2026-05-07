@@ -877,4 +877,231 @@ class Purplebox_DB {
 
         return implode(', ', $results);
     }
+
+    // ─── Reports ────────────────────────────────────────────────────────────────
+
+    /** Report 1 — Unit Inventory */
+    public static function get_report_inventory($args = []) {
+        global $wpdb;
+        $table  = self::units_table();
+        $floor  = sanitize_text_field($args['floor']  ?? '');
+        $size   = sanitize_text_field($args['size']   ?? '');
+        $status = sanitize_text_field($args['status'] ?? ''); // available|rented|''
+
+        $where = ['1=1'];
+        $vals  = [];
+        if ($floor) { $where[] = 'floor = %s';         $vals[] = $floor; }
+        if ($size)  { $where[] = 'size_category = %s'; $vals[] = $size; }
+
+        $wsql  = implode(' AND ', $where);
+        $units = !empty($vals)
+            ? ($wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE $wsql ORDER BY unit_number ASC", $vals), ARRAY_A) ?? [])
+            : ($wpdb->get_results("SELECT * FROM $table WHERE $wsql ORDER BY unit_number ASC", ARRAY_A) ?? []);
+
+        $rented_counts = self::get_rented_count_per_unit();
+        $result = [];
+        foreach ($units as $unit) {
+            $qty    = max(1, (int)($unit['quantity'] ?? 1));
+            $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            $avail  = $qty - $rented;
+            $ustatus = ($avail === 0) ? 'rented' : 'available';
+            if ($status && $status !== $ustatus) continue;
+            $unit['rented_count'] = $rented;
+            $unit['avail_count']  = $avail;
+            $unit['unit_status']  = $ustatus;
+            $unit['features_arr'] = !empty($unit['features']) ? (json_decode($unit['features'], true) ?? []) : [];
+            $result[] = $unit;
+        }
+        return $result;
+    }
+
+    /** Report 2 — Contracts (sorted by expiry ASC) */
+    public static function get_report_contracts($args = []) {
+        global $wpdb;
+        $ct     = self::contracts_table();
+        $tt     = self::tenants_table();
+        $status = sanitize_text_field($args['status']   ?? 'active');
+        $expiring = (int)($args['expiring'] ?? 0);
+        $today  = current_time('Y-m-d');
+
+        $where = ['1=1'];
+        $vals  = [];
+        if ($status && $status !== 'all') { $where[] = 'c.status = %s'; $vals[] = $status; }
+        if ($expiring > 0) {
+            $deadline = date('Y-m-d', strtotime("+{$expiring} days", strtotime($today)));
+            $where[] = 'c.move_out_date IS NOT NULL';
+            $where[] = 'c.move_out_date BETWEEN %s AND %s';
+            $vals[] = $today; $vals[] = $deadline;
+        }
+
+        $wsql = implode(' AND ', $where);
+        $sql  = "SELECT c.*, t.full_name AS tenant_name, t.client_id AS tenant_client_id,
+                        t.phones, t.email, t.emirates_id, t.nationality,
+                        DATEDIFF(c.move_out_date, %s) AS days_left
+                 FROM $ct c LEFT JOIN $tt t ON c.tenant_id = t.id
+                 WHERE $wsql
+                 ORDER BY CASE WHEN c.move_out_date IS NULL THEN 1 ELSE 0 END, c.move_out_date ASC";
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare($sql, array_merge([$today], $vals)), ARRAY_A
+        ) ?? [];
+
+        foreach ($rows as &$c) {
+            $details = self::get_unit_details_from_ids($c['unit_ids'] ?? '[]');
+            $labels  = [];
+            foreach ($details as $u) {
+                $lbl = $u['unit_number'];
+                if (!empty($u['display_name'])) $lbl .= ' (' . $u['display_name'] . ')';
+                $labels[] = $lbl;
+            }
+            $c['unit_labels'] = implode(', ', $labels);
+        }
+        return $rows;
+    }
+
+    /** Report 3 — Tenant Directory with contract history */
+    public static function get_report_tenants($args = []) {
+        global $wpdb;
+        $tt     = self::tenants_table();
+        $ct     = self::contracts_table();
+        $status = sanitize_text_field($args['status'] ?? 'all');
+        $today  = current_time('Y-m-d');
+
+        $where = ['1=1'];
+        $vals  = [];
+        if ($status && $status !== 'all') { $where[] = 'status = %s'; $vals[] = $status; }
+        $wsql    = implode(' AND ', $where);
+        $tenants = !empty($vals)
+            ? ($wpdb->get_results($wpdb->prepare("SELECT * FROM $tt WHERE $wsql ORDER BY full_name ASC", $vals), ARRAY_A) ?? [])
+            : ($wpdb->get_results("SELECT * FROM $tt WHERE $wsql ORDER BY full_name ASC", ARRAY_A) ?? []);
+
+        foreach ($tenants as &$tenant) {
+            $contracts = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, unit_ids, move_in_date, move_out_date, status,
+                        DATEDIFF(move_out_date, %s) AS days_left
+                 FROM $ct WHERE tenant_id = %d
+                 ORDER BY FIELD(status,'active','ended') ASC, move_out_date ASC",
+                $today, $tenant['id']
+            ), ARRAY_A) ?? [];
+
+            foreach ($contracts as &$con) {
+                $details = self::get_unit_details_from_ids($con['unit_ids'] ?? '[]');
+                $labels  = [];
+                foreach ($details as $u) {
+                    $lbl = $u['unit_number'];
+                    if (!empty($u['display_name'])) $lbl .= ' (' . $u['display_name'] . ')';
+                    $labels[] = $lbl;
+                }
+                $con['unit_labels'] = implode(', ', $labels);
+            }
+            $tenant['contracts']        = $contracts;
+            $tenant['active_contracts'] = array_values(array_filter($contracts, fn($c) => $c['status'] === 'active'));
+        }
+        return $tenants;
+    }
+
+    /** Report 4 — Availability Forecast */
+    public static function get_report_forecast() {
+        global $wpdb;
+        $ct    = self::contracts_table();
+        $tt    = self::tenants_table();
+        $today = current_time('Y-m-d');
+
+        $week_end  = date('Y-m-d', strtotime('+7 days',  strtotime($today)));
+        $month_end = date('Y-m-d', strtotime('+30 days', strtotime($today)));
+
+        $week_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT c.id, c.unit_ids, c.move_out_date,
+                    DATEDIFF(c.move_out_date, %s) AS days_left,
+                    t.full_name AS tenant_name, t.phones
+             FROM $ct c LEFT JOIN $tt t ON c.tenant_id = t.id
+             WHERE c.status = 'active' AND c.move_out_date BETWEEN %s AND %s
+             ORDER BY c.move_out_date ASC",
+            $today, $today, $week_end
+        ), ARRAY_A) ?? [];
+
+        $month_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT c.id, c.unit_ids, c.move_out_date,
+                    DATEDIFF(c.move_out_date, %s) AS days_left,
+                    t.full_name AS tenant_name, t.phones
+             FROM $ct c LEFT JOIN $tt t ON c.tenant_id = t.id
+             WHERE c.status = 'active' AND c.move_out_date > %s AND c.move_out_date <= %s
+             ORDER BY c.move_out_date ASC",
+            $today, $week_end, $month_end
+        ), ARRAY_A) ?? [];
+
+        $resolve = function (&$rows) {
+            foreach ($rows as &$r) {
+                $details = self::get_unit_details_from_ids($r['unit_ids'] ?? '[]');
+                $labels  = [];
+                foreach ($details as $u) {
+                    $lbl = $u['unit_number'];
+                    if (!empty($u['display_name'])) $lbl .= ' (' . $u['display_name'] . ')';
+                    $labels[] = $lbl;
+                }
+                $r['unit_labels'] = implode(', ', $labels);
+            }
+        };
+        $resolve($week_rows);
+        $resolve($month_rows);
+
+        return [
+            'available' => self::get_available_units(),
+            'week'      => $week_rows,
+            'month'     => $month_rows,
+            'today'     => $today,
+        ];
+    }
+
+    /** Report 5 — Occupancy Summary */
+    public static function get_report_occupancy() {
+        global $wpdb;
+        $ut    = self::units_table();
+        $ct    = self::contracts_table();
+        $today = current_time('Y-m-d');
+
+        $all_units     = $wpdb->get_results("SELECT id, unit_number, size_category, floor, quantity FROM $ut ORDER BY unit_number ASC", ARRAY_A) ?? [];
+        $rented_counts = self::get_rented_count_per_unit();
+
+        $by_size  = [];
+        $by_floor = [];
+        $totals   = ['total' => 0, 'rented' => 0, 'available' => 0];
+
+        foreach ($all_units as $unit) {
+            $qty    = max(1, (int)($unit['quantity'] ?? 1));
+            $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            $avail  = $qty - $rented;
+            $size   = $unit['size_category'];
+            $floor  = $unit['floor'];
+
+            if (!isset($by_size[$size]))  $by_size[$size]  = ['label' => $size,  'total' => 0, 'rented' => 0, 'available' => 0];
+            if (!isset($by_floor[$floor])) $by_floor[$floor] = ['label' => $floor, 'total' => 0, 'rented' => 0, 'available' => 0];
+
+            $by_size[$size]['total']      += $qty;  $by_size[$size]['rented']      += $rented;  $by_size[$size]['available']  += $avail;
+            $by_floor[$floor]['total']    += $qty;  $by_floor[$floor]['rented']    += $rented;  $by_floor[$floor]['available'] += $avail;
+            $totals['total'] += $qty; $totals['rented'] += $rented; $totals['available'] += $avail;
+        }
+
+        $pct = fn($r, $t) => $t > 0 ? round(($r / $t) * 100, 1) : 0;
+        $totals['occupancy'] = $pct($totals['rented'], $totals['total']);
+        foreach ($by_size  as &$r) $r['occupancy'] = $pct($r['rented'], $r['total']);
+        foreach ($by_floor as &$r) $r['occupancy'] = $pct($r['rented'], $r['total']);
+        ksort($by_size); ksort($by_floor);
+
+        $deadline      = date('Y-m-d', strtotime('+15 days', strtotime($today)));
+        $expiring_soon = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $ct WHERE status = 'active' AND move_out_date BETWEEN %s AND %s",
+            $today, $deadline
+        ));
+        $active_tenants = (int)$wpdb->get_var("SELECT COUNT(DISTINCT tenant_id) FROM $ct WHERE status = 'active'");
+
+        return [
+            'totals'         => $totals,
+            'by_size'        => array_values($by_size),
+            'by_floor'       => array_values($by_floor),
+            'expiring_soon'  => $expiring_soon,
+            'active_tenants' => $active_tenants,
+            'generated_at'   => current_time('d/m/Y H:i'),
+        ];
+    }
 }
