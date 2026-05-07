@@ -90,6 +90,21 @@ class Purplebox_Activator {
 
         update_option('purplebox_db_version', PURPLEBOX_VERSION);
 
+        // Add manage_purplebox capability to administrators
+        $admin_role = get_role('administrator');
+        if ($admin_role) {
+            $admin_role->add_cap('manage_purplebox');
+        }
+
+        // Create PurpleBox Manager role (limited to plugin only)
+        if (!get_role('purplebox_manager')) {
+            add_role('purplebox_manager', 'PurpleBox Manager', [
+                'read'             => true,
+                'manage_purplebox' => true,
+                'upload_files'     => true,
+            ]);
+        }
+
         $upload_dir = wp_upload_dir();
         $purplebox_dir = $upload_dir['basedir'] . '/purplebox';
         if (!file_exists($purplebox_dir)) {

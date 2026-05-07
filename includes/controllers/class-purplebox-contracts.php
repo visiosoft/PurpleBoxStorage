@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 class Purplebox_Contracts_Controller {
 
     public static function render_list() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 
@@ -80,7 +80,7 @@ class Purplebox_Contracts_Controller {
     }
 
     public static function render_wizard() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 
@@ -146,7 +146,7 @@ class Purplebox_Contracts_Controller {
     }
 
     public static function render_edit() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 
@@ -231,7 +231,7 @@ class Purplebox_Contracts_Controller {
     }
 
     public static function render_agreement() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 

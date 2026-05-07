@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 class Purplebox_Reports_Controller {
 
     public static function render() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 

@@ -12,6 +12,10 @@ class Purplebox_Admin {
         add_action('admin_notices', [$this, 'expiry_notices']);
         add_action('wp_ajax_purplebox_search_tenants', [$this, 'ajax_search_tenants']);
         add_action('wp_ajax_purplebox_available_units', [$this, 'ajax_available_units']);
+
+        // Role restrictions: PurpleBox Manager sees only PurpleBox pages
+        add_action('admin_menu', [$this, 'restrict_admin_for_pb_manager'], 999);
+        add_action('admin_init', [$this, 'redirect_pb_manager_to_purplebox']);
     }
 
     public function expiry_notices() {
@@ -62,7 +66,7 @@ class Purplebox_Admin {
         add_menu_page(
             __('PurpleBox', 'purplebox-storage'),
             __('PurpleBox', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-dashboard',
             [$this, 'render_dashboard'],
             'dashicons-building',
@@ -73,7 +77,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Dashboard', 'purplebox-storage'),
             __('Dashboard', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-dashboard',
             [$this, 'render_dashboard']
         );
@@ -82,7 +86,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Storage Inventory', 'purplebox-storage'),
             __('Inventory', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-units',
             [$this, 'render_units']
         );
@@ -91,7 +95,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Add Inventory', 'purplebox-storage'),
             __('Add Inventory', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-unit-edit',
             [$this, 'render_unit_edit']
         );
@@ -100,7 +104,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Tenants', 'purplebox-storage'),
             __('Tenants', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-tenants',
             [$this, 'render_tenants']
         );
@@ -109,7 +113,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Contracts', 'purplebox-storage'),
             __('Contracts', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-contracts',
             [$this, 'render_contracts']
         );
@@ -118,7 +122,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('New Contract', 'purplebox-storage'),
             __('New Contract', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-contract-new',
             [$this, 'render_contract_new']
         );
@@ -127,7 +131,7 @@ class Purplebox_Admin {
             'purplebox-dashboard',
             __('Reports', 'purplebox-storage'),
             __('📊 Reports', 'purplebox-storage'),
-            'manage_options',
+            'manage_purplebox',
             'purplebox-reports',
             [$this, 'render_reports']
         );
@@ -166,7 +170,7 @@ class Purplebox_Admin {
             return;
         }
 
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 
@@ -230,7 +234,7 @@ class Purplebox_Admin {
     public function ajax_search_tenants() {
         check_ajax_referer('purplebox_ajax', 'nonce');
 
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_send_json_error('Unauthorized');
         }
 
@@ -247,7 +251,7 @@ class Purplebox_Admin {
     public function ajax_available_units() {
         check_ajax_referer('purplebox_ajax', 'nonce');
 
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_purplebox')) {
             wp_send_json_error('Unauthorized');
         }
 
@@ -257,5 +261,78 @@ class Purplebox_Admin {
         ]);
 
         wp_send_json_success($units);
+    }
+
+    /**
+     * For PurpleBox Manager (has manage_purplebox but NOT manage_options):
+     * strip all WP admin menus that don't belong to this plugin.
+     */
+    public function restrict_admin_for_pb_manager() {
+        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
+            return; // Admins see everything
+        }
+
+        global $menu, $submenu;
+
+        // Collect all purplebox slugs to keep
+        $keep_slugs = [
+            'purplebox-dashboard',
+            'purplebox-units',
+            'purplebox-unit-edit',
+            'purplebox-tenants',
+            'purplebox-contracts',
+            'purplebox-contract-new',
+            'purplebox-reports',
+        ];
+
+        // Remove all top-level menu items except PurpleBox
+        foreach ($menu as $order => $item) {
+            $slug = $item[2] ?? '';
+            if (!in_array($slug, $keep_slugs, true) && strpos($slug, 'purplebox') === false) {
+                remove_menu_page($slug);
+            }
+        }
+
+        // Clean up admin bar items
+        add_action('admin_bar_menu', [$this, 'restrict_admin_bar_for_pb_manager'], 999);
+    }
+
+    /**
+     * Remove unrelated admin bar nodes for PurpleBox Manager.
+     */
+    public function restrict_admin_bar_for_pb_manager($wp_admin_bar) {
+        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
+            return;
+        }
+
+        $remove_nodes = [
+            'comments', 'new-content', 'wp-logo', 'site-name',
+            'updates', 'search', 'customize',
+        ];
+
+        foreach ($remove_nodes as $node) {
+            $wp_admin_bar->remove_node($node);
+        }
+    }
+
+    /**
+     * Redirect PurpleBox Manager away from WP Dashboard and unrelated pages
+     * to the PurpleBox Dashboard.
+     */
+    public function redirect_pb_manager_to_purplebox() {
+        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if (!$screen) {
+            return;
+        }
+
+        // If on the default WP dashboard or any non-purplebox page, redirect
+        if ($screen->id === 'dashboard' || strpos($screen->id, 'purplebox') === false) {
+            wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
+            exit;
+        }
     }
 }
