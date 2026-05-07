@@ -47,6 +47,11 @@ class Purplebox_Contracts_Controller {
             return;
         }
 
+        if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['contract_id'])) {
+            self::render_edit();
+            return;
+        }
+
         if (isset($_GET['action']) && $_GET['action'] === 'agreement' && isset($_GET['contract_id'])) {
             self::render_agreement();
             return;
@@ -137,6 +142,84 @@ class Purplebox_Contracts_Controller {
         }
 
         wp_redirect(admin_url('admin.php?page=purplebox-contracts&action=view&contract_id=' . $result . '&created=1'));
+        exit;
+    }
+
+    public static function render_edit() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Unauthorized', 'purplebox-storage'));
+        }
+
+        $contract_id = absint($_GET['contract_id'] ?? 0);
+        $contract    = Purplebox_DB::get_contract($contract_id);
+
+        if (!$contract) {
+            wp_die(__('Contract not found.', 'purplebox-storage'));
+        }
+
+        $contract['unit_details'] = Purplebox_DB::get_unit_details_from_ids($contract['unit_ids'] ?? '[]');
+
+        include PURPLEBOX_PLUGIN_DIR . 'views/contract-edit.php';
+    }
+
+    public static function handle_update() {
+        if (!wp_verify_nonce($_POST['purplebox_nonce'] ?? '', 'purplebox_update_contract')) {
+            wp_die(__('Security check failed', 'purplebox-storage'));
+        }
+
+        $contract_id = absint($_POST['contract_id'] ?? 0);
+        if (!$contract_id) {
+            wp_redirect(admin_url('admin.php?page=purplebox-contracts'));
+            exit;
+        }
+
+        // Load existing contract to preserve tenant_id + unit_ids
+        $existing = Purplebox_DB::get_contract($contract_id);
+        if (!$existing) {
+            wp_die(__('Contract not found.', 'purplebox-storage'));
+        }
+
+        $move_out_date  = sanitize_text_field($_POST['move_out_date'] ?? '');
+        $open_ended     = !empty($_POST['open_ended']);
+        $duration_weeks = !empty($_POST['duration_weeks']) ? absint($_POST['duration_weeks']) : null;
+
+        // Compute duration_weeks from dates if not manually supplied
+        if (!$duration_weeks && !$open_ended && $move_out_date && $existing['move_in_date']) {
+            $diff = (strtotime($move_out_date) - strtotime($existing['move_in_date'])) / 86400;
+            $duration_weeks = max(1, round($diff / 7));
+        }
+
+        $data = [
+            'id'               => $contract_id,
+            'tenant_id'        => $existing['tenant_id'],
+            'unit_ids'         => json_decode($existing['unit_ids'] ?? '[]', true),
+            'move_in_date'     => sanitize_text_field($_POST['move_in_date'] ?? $existing['move_in_date']),
+            'move_out_date'    => (!$open_ended && $move_out_date) ? $move_out_date : null,
+            'duration_weeks'   => $duration_weeks,
+            'payment_method'   => sanitize_text_field($_POST['payment_method'] ?? 'Cash'),
+            'next_payment_date'=> sanitize_text_field($_POST['next_payment_date'] ?? ''),
+            'auto_renew'       => !empty($_POST['auto_renew']) ? 1 : 0,
+            'status'           => sanitize_text_field($_POST['status'] ?? $existing['status']),
+            'signed_pdf_path'  => $existing['signed_pdf_path'] ?? null,
+        ];
+
+        // Handle PDF upload
+        if (!empty($_FILES['signed_pdf']) && $_FILES['signed_pdf']['size'] > 0) {
+            add_filter('upload_dir', [__CLASS__, 'custom_upload_dir']);
+            $uploaded = wp_handle_upload($_FILES['signed_pdf'], [
+                'test_form' => false,
+                'mimes'     => ['pdf' => 'application/pdf'],
+            ]);
+            remove_filter('upload_dir', [__CLASS__, 'custom_upload_dir']);
+
+            if (!isset($uploaded['error'])) {
+                $data['signed_pdf_path'] = $uploaded['url'];
+            }
+        }
+
+        Purplebox_DB::save_contract($data);
+
+        wp_redirect(admin_url('admin.php?page=purplebox-contracts&action=view&contract_id=' . $contract_id . '&updated=1'));
         exit;
     }
 

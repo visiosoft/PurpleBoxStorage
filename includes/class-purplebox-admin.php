@@ -185,6 +185,10 @@ class Purplebox_Admin {
                 require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-contracts.php';
                 Purplebox_Contracts_Controller::handle_save();
                 break;
+            case 'update_contract':
+                require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-contracts.php';
+                Purplebox_Contracts_Controller::handle_update();
+                break;
         }
     }
 

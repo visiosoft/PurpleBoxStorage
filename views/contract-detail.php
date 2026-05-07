@@ -6,8 +6,16 @@
     </a>
     <hr class="wp-header-end">
 
+    <a href="<?php echo esc_url(admin_url('admin.php?page=purplebox-contracts&action=edit&contract_id=' . $contract['id'])); ?>" class="page-title-action">
+        <?php esc_html_e('✏ Edit Contract', 'purplebox-storage'); ?>
+    </a>
+
     <?php if (isset($_GET['created'])) : ?>
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Contract created successfully!', 'purplebox-storage'); ?></p></div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['updated'])) : ?>
+        <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Contract updated successfully.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>
 
     <?php if (isset($_GET['unit_cancelled'])) : ?>
