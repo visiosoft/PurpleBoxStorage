@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Storage
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 2.3.9
+ * Version: 2.4.0
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '2.3.9');
+define('PURPLEBOX_VERSION', '2.4.0');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -47,19 +47,35 @@ register_activation_hook(__FILE__, ['Purplebox_Activator', 'activate']);
 register_deactivation_hook(__FILE__, ['Purplebox_Deactivator', 'deactivate']);
 
 /**
- * Send PurpleBox Manager users to the PurpleBox dashboard after login,
- * overriding WooCommerce / default WP "my-account" redirect.
+ * Helper: check if a user is a PurpleBox Manager (but not admin).
+ */
+function purplebox_is_pb_manager($user) {
+    if (!$user instanceof WP_User) return false;
+    $roles = (array) $user->roles;
+    return in_array('purplebox_manager', $roles, true) && !in_array('administrator', $roles, true);
+}
+
+/**
+ * wp-login.php redirect (standard WP login).
+ * High priority (9999) to run after WooCommerce's own login_redirect hook.
  */
 add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $user) {
-    if (is_wp_error($user) || !($user instanceof WP_User)) {
-        return $redirect_to;
-    }
-    $roles = (array) $user->roles;
-    if (in_array('purplebox_manager', $roles, true) && !in_array('administrator', $roles, true)) {
+    if (purplebox_is_pb_manager($user)) {
         return admin_url('admin.php?page=purplebox-dashboard');
     }
     return $redirect_to;
-}, 10, 3);
+}, 9999, 3);
+
+/**
+ * WooCommerce frontend login form redirect.
+ * Fires when user logs in via /my-account page.
+ */
+add_filter('woocommerce_login_redirect', function ($redirect, $user) {
+    if (purplebox_is_pb_manager($user)) {
+        return admin_url('admin.php?page=purplebox-dashboard');
+    }
+    return $redirect;
+}, 9999, 2);
 
 add_action('plugins_loaded', function () {
     global $wpdb;
