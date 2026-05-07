@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Storage
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 2.3.8
+ * Version: 2.3.9
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '2.3.8');
+define('PURPLEBOX_VERSION', '2.3.9');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -45,6 +45,21 @@ require_once PURPLEBOX_PLUGIN_DIR . 'includes/class-purplebox-admin.php';
 
 register_activation_hook(__FILE__, ['Purplebox_Activator', 'activate']);
 register_deactivation_hook(__FILE__, ['Purplebox_Deactivator', 'deactivate']);
+
+/**
+ * Send PurpleBox Manager users to the PurpleBox dashboard after login,
+ * overriding WooCommerce / default WP "my-account" redirect.
+ */
+add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $user) {
+    if (is_wp_error($user) || !($user instanceof WP_User)) {
+        return $redirect_to;
+    }
+    $roles = (array) $user->roles;
+    if (in_array('purplebox_manager', $roles, true) && !in_array('administrator', $roles, true)) {
+        return admin_url('admin.php?page=purplebox-dashboard');
+    }
+    return $redirect_to;
+}, 10, 3);
 
 add_action('plugins_loaded', function () {
     global $wpdb;
