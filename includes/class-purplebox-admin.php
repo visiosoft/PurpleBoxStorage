@@ -264,13 +264,30 @@ class Purplebox_Admin {
     }
 
     /**
-     * For PurpleBox Manager (has manage_purplebox but NOT manage_options):
-     * - Remove all non-PurpleBox top-level menus
-     * - Remove Units/Inventory sub-pages from PurpleBox menu
+     * Check if the current user is a restricted PurpleBox role (not a full WP admin).
+     * Returns: 'purplebox_admin', 'purplebox_manager', or false.
+     */
+    private function get_pb_role() {
+        if (current_user_can('manage_options')) {
+            return false; // Full admin — no restrictions
+        }
+        if (in_array('purplebox_admin', (array) wp_get_current_user()->roles, true)) {
+            return 'purplebox_admin';
+        }
+        if (in_array('purplebox_manager', (array) wp_get_current_user()->roles, true)) {
+            return 'purplebox_manager';
+        }
+        return false;
+    }
+
+    /**
+     * Strip all non-PurpleBox menus for both restricted roles.
+     * PurpleBox Manager also loses Units/Inventory sub-pages.
      */
     public function restrict_admin_for_pb_manager() {
-        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
-            return; // Admins see everything as normal
+        $role = $this->get_pb_role();
+        if (!$role) {
+            return;
         }
 
         global $menu;
@@ -283,19 +300,21 @@ class Purplebox_Admin {
             }
         }
 
-        // Remove Units/Inventory sub-pages (PurpleBox Manager has no need to manage units)
-        remove_submenu_page('purplebox-dashboard', 'purplebox-units');
-        remove_submenu_page('purplebox-dashboard', 'purplebox-unit-edit');
+        // PurpleBox Manager cannot manage units/inventory
+        if ($role === 'purplebox_manager') {
+            remove_submenu_page('purplebox-dashboard', 'purplebox-units');
+            remove_submenu_page('purplebox-dashboard', 'purplebox-unit-edit');
+        }
 
-        // Clean up admin bar
+        // Clean up admin bar for both roles
         add_action('admin_bar_menu', [$this, 'restrict_admin_bar_for_pb_manager'], 999);
     }
 
     /**
-     * Remove unrelated admin bar nodes for PurpleBox Manager.
+     * Remove unrelated admin bar nodes for restricted PurpleBox roles.
      */
     public function restrict_admin_bar_for_pb_manager($wp_admin_bar) {
-        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
+        if (!$this->get_pb_role()) {
             return;
         }
 
@@ -310,13 +329,12 @@ class Purplebox_Admin {
     }
 
     /**
-     * Redirect PurpleBox Manager away from:
-     * - WP core dashboard
-     * - Non-purplebox pages
-     * - Units/Inventory pages (even if accessed by URL)
+     * Redirect restricted roles away from non-PurpleBox pages.
+     * PurpleBox Manager is also blocked from Units/Inventory pages.
      */
     public function redirect_pb_manager_to_purplebox() {
-        if (!current_user_can('manage_purplebox') || current_user_can('manage_options')) {
+        $role = $this->get_pb_role();
+        if (!$role) {
             return;
         }
 
@@ -325,18 +343,20 @@ class Purplebox_Admin {
             return;
         }
 
-        // Block access to WP core pages and non-purplebox pages
+        // Block WP core pages and non-purplebox pages
         if ($screen->id === 'dashboard' || strpos($screen->id, 'purplebox') === false) {
             wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
             exit;
         }
 
-        // Block direct URL access to Units/Inventory pages
-        $blocked_pages = ['purplebox-units', 'purplebox-unit-edit'];
-        $current_page  = sanitize_key($_GET['page'] ?? '');
-        if (in_array($current_page, $blocked_pages, true)) {
-            wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
-            exit;
+        // PurpleBox Manager: block direct URL access to Units/Inventory
+        if ($role === 'purplebox_manager') {
+            $blocked_pages = ['purplebox-units', 'purplebox-unit-edit'];
+            $current_page  = sanitize_key($_GET['page'] ?? '');
+            if (in_array($current_page, $blocked_pages, true)) {
+                wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
+                exit;
+            }
         }
     }
 }

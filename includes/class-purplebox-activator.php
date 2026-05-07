@@ -96,7 +96,16 @@ class Purplebox_Activator {
             $admin_role->add_cap('manage_purplebox');
         }
 
-        // Create PurpleBox Manager role (limited to plugin only)
+        // PurpleBox Admin — full plugin access, no other WP admin sections
+        if (!get_role('purplebox_admin')) {
+            add_role('purplebox_admin', 'PurpleBox Admin', [
+                'read'             => true,
+                'manage_purplebox' => true,
+                'upload_files'     => true,
+            ]);
+        }
+
+        // PurpleBox Manager — limited plugin access (no units/inventory)
         if (!get_role('purplebox_manager')) {
             add_role('purplebox_manager', 'PurpleBox Manager', [
                 'read'             => true,

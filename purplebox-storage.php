@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Storage
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 2.4.1
+ * Version: 2.4.2
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '2.4.1');
+define('PURPLEBOX_VERSION', '2.4.2');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -47,7 +47,8 @@ register_activation_hook(__FILE__, ['Purplebox_Activator', 'activate']);
 register_deactivation_hook(__FILE__, ['Purplebox_Deactivator', 'deactivate']);
 
 /**
- * Helper: check if current user (or given user) is a PurpleBox Manager but not admin.
+ * Helper: returns true if the user is a restricted PurpleBox role (Admin or Manager)
+ * but NOT a full WP administrator.
  */
 function purplebox_is_pb_manager($user = null) {
     if ($user === null) {
@@ -57,7 +58,10 @@ function purplebox_is_pb_manager($user = null) {
     } else {
         return false;
     }
-    return in_array('purplebox_manager', $roles, true) && !in_array('administrator', $roles, true);
+    if (in_array('administrator', $roles, true)) {
+        return false;
+    }
+    return in_array('purplebox_admin', $roles, true) || in_array('purplebox_manager', $roles, true);
 }
 
 /**

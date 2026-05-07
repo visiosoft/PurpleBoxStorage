@@ -8,7 +8,8 @@ class Purplebox_Deactivator {
     public static function deactivate() {
         delete_transient('purplebox_dashboard_stats');
 
-        // Remove PurpleBox Manager role
+        // Remove PurpleBox roles
+        remove_role('purplebox_admin');
         remove_role('purplebox_manager');
 
         // Remove custom capability from administrator
