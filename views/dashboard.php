@@ -53,11 +53,10 @@
                                 <li style="padding:5px 0; border-bottom:1px solid #f0f0f1;">
                                     <strong><?php echo esc_html($u['unit_number']); ?></strong>
                                     <?php if (!empty($u['display_name'])) : ?>
-                                        <span style="margin-left:6px;"><?php echo esc_html($u['display_name']); ?></span>
-                                    <?php else : ?>
-                                        <span style="color:#50575e; margin-left:6px;"><?php echo esc_html($u['size_category']); ?></span>
+                                        <span style="color:#50575e; margin-left:4px;">·</span>
+                                        <em style="color:#50575e; margin-left:4px; font-style:italic;"><?php echo esc_html($u['display_name']); ?></em>
                                     <?php endif; ?>
-                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['floor']); ?></span>
+                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['size_category']); ?> &middot; <?php echo esc_html($u['floor']); ?></span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -80,11 +79,10 @@
                                 <li style="padding:5px 0; border-bottom:1px solid #f0f0f1;">
                                     <strong><?php echo esc_html($u['unit_number']); ?></strong>
                                     <?php if (!empty($u['display_name'])) : ?>
-                                        <span style="margin-left:6px;"><?php echo esc_html($u['display_name']); ?></span>
-                                    <?php else : ?>
-                                        <span style="color:#50575e; margin-left:6px;"><?php echo esc_html($u['size_category']); ?></span>
+                                        <span style="color:#50575e; margin-left:4px;">·</span>
+                                        <em style="color:#50575e; margin-left:4px; font-style:italic;"><?php echo esc_html($u['display_name']); ?></em>
                                     <?php endif; ?>
-                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['floor']); ?></span>
+                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['size_category']); ?> &middot; <?php echo esc_html($u['floor']); ?></span>
                                     <span style="font-size:11px; color:#8a6500;"><?php printf(esc_html__('Free: %s', 'purplebox-storage'), esc_html($u['available_date'])); ?></span>
                                 </li>
                             <?php endforeach; ?>
@@ -108,11 +106,10 @@
                                 <li style="padding:5px 0; border-bottom:1px solid #f0f0f1;">
                                     <strong><?php echo esc_html($u['unit_number']); ?></strong>
                                     <?php if (!empty($u['display_name'])) : ?>
-                                        <span style="margin-left:6px;"><?php echo esc_html($u['display_name']); ?></span>
-                                    <?php else : ?>
-                                        <span style="color:#50575e; margin-left:6px;"><?php echo esc_html($u['size_category']); ?></span>
+                                        <span style="color:#50575e; margin-left:4px;">·</span>
+                                        <em style="color:#50575e; margin-left:4px; font-style:italic;"><?php echo esc_html($u['display_name']); ?></em>
                                     <?php endif; ?>
-                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['floor']); ?></span>
+                                    <span style="color:#50575e; font-size:11px; display:block;"><?php echo esc_html($u['size_category']); ?> &middot; <?php echo esc_html($u['floor']); ?></span>
                                     <span style="font-size:11px; color:#1e4ea1;"><?php printf(esc_html__('Free: %s', 'purplebox-storage'), esc_html($u['available_date'])); ?></span>
                                 </li>
                             <?php endforeach; ?>
@@ -166,15 +163,17 @@
                                         $bg = '#e8f5e9'; $fg = '#1b5e20'; $dot = '#00691f';
                                     }
                                 ?>
-                                    <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:12px; font-size:12px; background:<?php echo $bg; ?>; color:<?php echo $fg; ?>;">
-                                        <span style="font-size:9px; color:<?php echo $dot; ?>;">●</span>
-                                        <strong><?php echo esc_html($u['unit_number']); ?></strong>
+                                    <span style="display:inline-flex; flex-direction:column; padding:4px 10px; border-radius:10px; font-size:12px; background:<?php echo $bg; ?>; color:<?php echo $fg; ?>; line-height:1.4;">
+                                        <span style="display:flex; align-items:center; gap:5px;">
+                                            <span style="font-size:9px; color:<?php echo $dot; ?>;">●</span>
+                                            <strong><?php echo esc_html($u['unit_number']); ?></strong>
+                                            <span style="opacity:.55; font-size:11px;"><?php echo esc_html($u['floor']); ?></span>
+                                            <?php if ($qty > 1) : ?>
+                                                <span style="font-size:11px; font-weight:600; margin-left:2px;"><?php echo $avail . '/' . $qty; ?></span>
+                                            <?php endif; ?>
+                                        </span>
                                         <?php if (!empty($u['display_name'])) : ?>
-                                            <span style="opacity:.8;"><?php echo esc_html($u['display_name']); ?></span>
-                                        <?php endif; ?>
-                                        <span style="opacity:.6; font-size:11px;"><?php echo esc_html($u['floor']); ?></span>
-                                        <?php if ($qty > 1) : ?>
-                                            <span style="font-size:11px; font-weight:600;"><?php echo $avail . '/' . $qty; ?></span>
+                                            <em style="font-style:italic; font-size:11px; opacity:.75; padding-left:14px;"><?php echo esc_html($u['display_name']); ?></em>
                                         <?php endif; ?>
                                     </span>
                                 <?php endforeach; ?>
