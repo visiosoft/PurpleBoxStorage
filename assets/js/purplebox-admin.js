@@ -24,48 +24,6 @@
             goToStep(currentStep - 1);
         });
 
-        // Weeks selector → auto-calculate move_out_date
-        $form.on('change', '#duration_weeks', function() {
-            var val = $(this).val();
-            if (val === 'custom') {
-                $('#custom-weeks-wrap').show();
-            } else {
-                $('#custom-weeks-wrap').hide();
-                if (val) {
-                    calcMoveOut(parseInt(val));
-                } else {
-                    $('#move_out_date').val('');
-                }
-            }
-        });
-
-        $form.on('input', '#custom_weeks_input', function() {
-            var weeks = parseInt($(this).val());
-            if (weeks > 0) {
-                calcMoveOut(weeks);
-            }
-        });
-
-        $form.on('change', '#move_in_date', function() {
-            var weeksVal = $('#duration_weeks').val();
-            if (weeksVal && weeksVal !== 'custom') {
-                calcMoveOut(parseInt(weeksVal));
-            } else if (weeksVal === 'custom') {
-                var custom = parseInt($('#custom_weeks_input').val());
-                if (custom > 0) calcMoveOut(custom);
-            }
-        });
-
-        function calcMoveOut(weeks) {
-            var moveIn = $('#move_in_date').val();
-            if (!moveIn) return;
-            var d = new Date(moveIn);
-            d.setDate(d.getDate() + weeks * 7);
-            var y = d.getFullYear();
-            var m = String(d.getMonth() + 1).padStart(2, '0');
-            var day = String(d.getDate()).padStart(2, '0');
-            $('#move_out_date').val(y + '-' + m + '-' + day);
-        }
 
         function goToStep(step) {
             currentStep = step;
@@ -121,28 +79,18 @@
                 unitLabels.push(num + ' (' + size + ', ' + floor + ')');
             });
 
-            var moveIn   = $('#move_in_date').val();
-            var moveOut  = $('#move_out_date').val();
-            var payment  = $('#payment_method option:selected').text().trim();
-            var nextPay  = $('#next_payment_date').val();
-            var autoRenew = $('input[name="auto_renew"]').is(':checked');
-
-            var weeksVal = $('#duration_weeks').val();
-            var durationText = '';
-            if (weeksVal === 'custom') {
-                var w = $('#custom_weeks_input').val();
-                durationText = w ? w + ' weeks' : '—';
-            } else if (weeksVal) {
-                durationText = $('#duration_weeks option:selected').text().trim();
-            } else {
-                durationText = 'Open-ended';
-            }
+            var moveIn      = $('#move_in_date').val();
+            var firstPay    = $('#first_payment_date').val();
+            var moveOut     = $('#move_out_date').val();
+            var payment     = $('#payment_method option:selected').text().trim();
+            var nextPay     = $('#next_payment_date').val();
+            var autoRenew   = $('input[name="auto_renew"]').is(':checked');
 
             $('#review-tenant').text(tenantText);
             $('#review-units').html(unitLabels.length ? unitLabels.join('<br>') : '—');
             $('#review-move-in').text(moveIn || '—');
+            $('#review-first-payment').text(firstPay || '—');
             $('#review-move-out').text(moveOut || 'Open-ended');
-            $('#review-duration').text(durationText);
             $('#review-payment').text(payment || '—');
             $('#review-next-payment').text(nextPay || '—');
             $('#review-renew').text(autoRenew ? 'Yes' : 'No');

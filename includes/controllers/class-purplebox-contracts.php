@@ -98,11 +98,11 @@ class Purplebox_Contracts_Controller {
             wp_die(__('Security check failed', 'purplebox-storage'));
         }
 
-        $unit_ids      = array_map('absint', (array) ($_POST['unit_ids'] ?? []));
-        $tenant_id     = absint($_POST['tenant_id'] ?? 0);
-        $move_in_date  = sanitize_text_field($_POST['move_in_date'] ?? '');
-        $move_out_date = sanitize_text_field($_POST['move_out_date'] ?? '');
-        $duration_weeks = !empty($_POST['duration_weeks']) ? absint($_POST['duration_weeks']) : null;
+        $unit_ids           = array_map('absint', (array) ($_POST['unit_ids'] ?? []));
+        $tenant_id          = absint($_POST['tenant_id'] ?? 0);
+        $move_in_date       = sanitize_text_field($_POST['move_in_date'] ?? '');
+        $move_out_date      = sanitize_text_field($_POST['move_out_date'] ?? '');
+        $first_payment_date = sanitize_text_field($_POST['first_payment_date'] ?? '');
 
         if (!$tenant_id || empty($unit_ids) || !$move_in_date) {
             wp_redirect(admin_url('admin.php?page=purplebox-contract-new&error=missing_fields'));
@@ -110,15 +110,15 @@ class Purplebox_Contracts_Controller {
         }
 
         $data = [
-            'tenant_id'        => $tenant_id,
-            'unit_ids'         => $unit_ids,
-            'move_in_date'     => $move_in_date,
-            'move_out_date'    => !empty($move_out_date) ? $move_out_date : null,
-            'duration_weeks'   => $duration_weeks,
-            'payment_method'   => sanitize_text_field($_POST['payment_method'] ?? 'Cash'),
-            'next_payment_date'=> sanitize_text_field($_POST['next_payment_date'] ?? ''),
-            'auto_renew'       => !empty($_POST['auto_renew']) ? 1 : 0,
-            'status'           => 'active',
+            'tenant_id'          => $tenant_id,
+            'unit_ids'           => $unit_ids,
+            'move_in_date'       => $move_in_date,
+            'move_out_date'      => !empty($move_out_date) ? $move_out_date : null,
+            'first_payment_date' => !empty($first_payment_date) ? $first_payment_date : null,
+            'payment_method'     => sanitize_text_field($_POST['payment_method'] ?? 'Cash'),
+            'next_payment_date'  => sanitize_text_field($_POST['next_payment_date'] ?? ''),
+            'auto_renew'         => !empty($_POST['auto_renew']) ? 1 : 0,
+            'status'             => 'active',
         ];
 
         if (!empty($_FILES['signed_pdf']) && $_FILES['signed_pdf']['size'] > 0) {

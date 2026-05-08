@@ -137,29 +137,16 @@
                             </td>
                         </tr>
                         <tr>
-                            <th><label for="duration_weeks"><?php esc_html_e('Duration', 'purplebox-storage'); ?></label></th>
+                            <th><label for="first_payment_date"><?php esc_html_e('First Payment Date', 'purplebox-storage'); ?></label></th>
                             <td>
-                                <select id="duration_weeks" name="duration_weeks" style="width:180px;">
-                                    <option value=""><?php esc_html_e('— Open-ended —', 'purplebox-storage'); ?></option>
-                                    <option value="4"><?php esc_html_e('4 Weeks (1 month)', 'purplebox-storage'); ?></option>
-                                    <option value="8"><?php esc_html_e('8 Weeks (2 months)', 'purplebox-storage'); ?></option>
-                                    <option value="12"><?php esc_html_e('12 Weeks (3 months)', 'purplebox-storage'); ?></option>
-                                    <option value="16"><?php esc_html_e('16 Weeks (4 months)', 'purplebox-storage'); ?></option>
-                                    <option value="26"><?php esc_html_e('26 Weeks (6 months)', 'purplebox-storage'); ?></option>
-                                    <option value="52"><?php esc_html_e('52 Weeks (1 year)', 'purplebox-storage'); ?></option>
-                                    <option value="custom"><?php esc_html_e('Custom weeks', 'purplebox-storage'); ?></option>
-                                </select>
-                                <span id="custom-weeks-wrap" style="display:none; margin-left:8px;">
-                                    <input type="number" id="custom_weeks_input" min="1" max="260" placeholder="<?php esc_attr_e('# weeks', 'purplebox-storage'); ?>" class="small-text">
-                                    <?php esc_html_e('weeks', 'purplebox-storage'); ?>
-                                </span>
+                                <input type="date" name="first_payment_date" id="first_payment_date" value="">
                             </td>
                         </tr>
                         <tr>
                             <th><label for="move_out_date"><?php esc_html_e('Move Out Date', 'purplebox-storage'); ?></label></th>
                             <td>
                                 <input type="date" name="move_out_date" id="move_out_date" value="">
-                                <p class="description"><?php esc_html_e('Auto-calculated from duration, or enter manually. Leave blank for open-ended.', 'purplebox-storage'); ?></p>
+                                <p class="description"><?php esc_html_e('Leave blank for open-ended contract.', 'purplebox-storage'); ?></p>
                             </td>
                         </tr>
                         <tr>
@@ -224,12 +211,12 @@
                             <td id="review-move-in">—</td>
                         </tr>
                         <tr>
-                            <th><?php esc_html_e('Move Out', 'purplebox-storage'); ?></th>
-                            <td id="review-move-out">—</td>
+                            <th><?php esc_html_e('First Payment', 'purplebox-storage'); ?></th>
+                            <td id="review-first-payment">—</td>
                         </tr>
                         <tr>
-                            <th><?php esc_html_e('Duration', 'purplebox-storage'); ?></th>
-                            <td id="review-duration">—</td>
+                            <th><?php esc_html_e('Move Out', 'purplebox-storage'); ?></th>
+                            <td id="review-move-out">—</td>
                         </tr>
                         <tr>
                             <th><?php esc_html_e('Payment Method', 'purplebox-storage'); ?></th>

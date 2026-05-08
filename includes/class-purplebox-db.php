@@ -512,16 +512,16 @@ class Purplebox_DB {
         }
 
         $fields = [
-            'tenant_id'        => absint($data['tenant_id']),
-            'unit_ids'         => wp_json_encode($unit_ids),
-            'move_in_date'     => sanitize_text_field($data['move_in_date']),
-            'move_out_date'    => !empty($data['move_out_date']) ? sanitize_text_field($data['move_out_date']) : null,
-            'duration_weeks'   => !empty($data['duration_weeks']) ? absint($data['duration_weeks']) : null,
-            'payment_method'   => sanitize_text_field($data['payment_method'] ?? 'Cash'),
-            'next_payment_date'=> !empty($data['next_payment_date']) ? sanitize_text_field($data['next_payment_date']) : null,
-            'auto_renew'       => !empty($data['auto_renew']) ? 1 : 0,
-            'signed_pdf_path'  => !empty($data['signed_pdf_path']) ? sanitize_text_field($data['signed_pdf_path']) : null,
-            'status'           => sanitize_text_field($data['status'] ?? 'active'),
+            'tenant_id'          => absint($data['tenant_id']),
+            'unit_ids'           => wp_json_encode($unit_ids),
+            'move_in_date'       => sanitize_text_field($data['move_in_date']),
+            'move_out_date'      => !empty($data['move_out_date']) ? sanitize_text_field($data['move_out_date']) : null,
+            'first_payment_date' => !empty($data['first_payment_date']) ? sanitize_text_field($data['first_payment_date']) : null,
+            'payment_method'     => sanitize_text_field($data['payment_method'] ?? 'Cash'),
+            'next_payment_date'  => !empty($data['next_payment_date']) ? sanitize_text_field($data['next_payment_date']) : null,
+            'auto_renew'         => !empty($data['auto_renew']) ? 1 : 0,
+            'signed_pdf_path'    => !empty($data['signed_pdf_path']) ? sanitize_text_field($data['signed_pdf_path']) : null,
+            'status'             => sanitize_text_field($data['status'] ?? 'active'),
         ];
 
         if (!empty($data['id'])) {

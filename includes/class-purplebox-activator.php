@@ -129,6 +129,8 @@ class Purplebox_Activator {
     public static function ensure_columns($units_table, $tenants_table) {
         global $wpdb;
 
+        $contracts_table = $wpdb->prefix . 'purplebox_contracts';
+
         // Guard: if tables don't exist yet, skip — activate() will create them.
         if (!$wpdb->get_var("SHOW TABLES LIKE '$units_table'") ||
             !$wpdb->get_var("SHOW TABLES LIKE '$tenants_table'")) {
@@ -167,6 +169,22 @@ class Purplebox_Activator {
         foreach ($tenants_add as $col => $sql) {
             if (!in_array($col, $tenants_columns)) {
                 $wpdb->query($sql);
+            }
+        }
+
+        // Contracts table additions
+        if ($wpdb->get_var("SHOW TABLES LIKE '$contracts_table'")) {
+            $contracts_columns = array_column(
+                $wpdb->get_results("SHOW COLUMNS FROM $contracts_table", ARRAY_A) ?? [],
+                'Field'
+            );
+            $contracts_add = [
+                'first_payment_date' => "ALTER TABLE $contracts_table ADD COLUMN first_payment_date date DEFAULT NULL AFTER move_out_date",
+            ];
+            foreach ($contracts_add as $col => $sql) {
+                if (!in_array($col, $contracts_columns)) {
+                    $wpdb->query($sql);
+                }
             }
         }
     }
