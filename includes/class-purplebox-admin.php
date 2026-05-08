@@ -135,6 +135,15 @@ class Purplebox_Admin {
             'purplebox-reports',
             [$this, 'render_reports']
         );
+
+        add_submenu_page(
+            'purplebox-dashboard',
+            __('Backup & Restore', 'purplebox-storage'),
+            __('🗄️ Backup', 'purplebox-storage'),
+            'manage_purplebox',
+            'purplebox-backup',
+            [$this, 'render_backup']
+        );
     }
 
     public function enqueue_assets($hook) {
@@ -193,6 +202,14 @@ class Purplebox_Admin {
                 require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-contracts.php';
                 Purplebox_Contracts_Controller::handle_update();
                 break;
+            case 'export_backup':
+                require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-backup.php';
+                Purplebox_Backup_Controller::handle_export();
+                break;
+            case 'import_backup':
+                require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-backup.php';
+                Purplebox_Backup_Controller::handle_import();
+                break;
         }
     }
 
@@ -229,6 +246,11 @@ class Purplebox_Admin {
     public function render_reports() {
         require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-reports.php';
         Purplebox_Reports_Controller::render();
+    }
+
+    public function render_backup() {
+        require_once PURPLEBOX_PLUGIN_DIR . 'includes/controllers/class-purplebox-backup.php';
+        Purplebox_Backup_Controller::render();
     }
 
     public function ajax_search_tenants() {
@@ -300,10 +322,11 @@ class Purplebox_Admin {
             }
         }
 
-        // PurpleBox Manager cannot manage units/inventory
+        // PurpleBox Manager cannot manage units/inventory or run backups
         if ($role === 'purplebox_manager') {
             remove_submenu_page('purplebox-dashboard', 'purplebox-units');
             remove_submenu_page('purplebox-dashboard', 'purplebox-unit-edit');
+            remove_submenu_page('purplebox-dashboard', 'purplebox-backup');
         }
 
         // Clean up admin bar for both roles
@@ -349,9 +372,9 @@ class Purplebox_Admin {
             exit;
         }
 
-        // PurpleBox Manager: block direct URL access to Units/Inventory
+        // PurpleBox Manager: block direct URL access to Units/Inventory and Backup
         if ($role === 'purplebox_manager') {
-            $blocked_pages = ['purplebox-units', 'purplebox-unit-edit'];
+            $blocked_pages = ['purplebox-units', 'purplebox-unit-edit', 'purplebox-backup'];
             $current_page  = sanitize_key($_GET['page'] ?? '');
             if (in_array($current_page, $blocked_pages, true)) {
                 wp_redirect(admin_url('admin.php?page=purplebox-dashboard'));
