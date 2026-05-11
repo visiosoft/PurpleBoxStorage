@@ -45,7 +45,6 @@
 
 @media (max-width: 1100px) {
     .purplebox-wrap .dashboard-widgets { grid-template-columns: 1fr; }
-    .purplebox-wrap .at-a-glance { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Availability bars */
@@ -389,4 +388,65 @@
 #adminmenu .toplevel_page_purplebox-dashboard.current .wp-menu-image::before,
 #adminmenu .toplevel_page_purplebox-dashboard:hover .wp-menu-image::before {
     color: #6d28d9;
+}
+
+/* ── v3.0.0 Additions ─────────────────────────────────────────────────────── */
+
+/* WhatsApp quick-contact button */
+.pb-wa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: #25D366;
+    color: #fff !important;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.5;
+    white-space: nowrap;
+    border: none;
+}
+
+.pb-wa-btn:hover,
+.pb-wa-btn:focus {
+    background: #1ebe59;
+    color: #fff !important;
+}
+
+.pb-wa-btn::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z'/%3E%3Cpath d='M11.998 2C6.477 2 2 6.477 2 11.998c0 1.763.461 3.417 1.268 4.852L2 22l5.285-1.388A9.945 9.945 0 0 0 11.998 22c5.521 0 9.998-4.477 9.998-9.998C21.996 6.48 17.519 2 11.998 2zm0 18.146a8.133 8.133 0 0 1-4.146-1.133l-.297-.177-3.077.807.822-3.002-.193-.307A8.12 8.12 0 0 1 3.855 12c0-4.493 3.657-8.15 8.147-8.15 4.49 0 8.148 3.657 8.148 8.148-.002 4.49-3.66 8.148-8.152 8.148z'/%3E%3C/svg%3E") no-repeat center/contain;
+}
+
+.pb-wa-btn-sm {
+    font-size: 11px;
+    padding: 2px 7px;
+}
+
+/* Document expiry table on dashboard */
+.purplebox-wrap .pb-expiry-box { border-left-width: 4px; border-left-style: solid; }
+
+.pb-doc-expiry { font-size: 13px; }
+.pb-doc-expiry em { margin-left: 4px; font-size: 11px; }
+
+.pb-doc-expiry.pb-warning { color: #8a6500; }
+.pb-doc-expiry.pb-critical { color: #b32d2e; font-weight: 600; }
+.pb-doc-expiry.pb-expired  { color: #b32d2e; font-weight: 700; }
+
+/* Stats tile grid — allow 5 tiles */
+.purplebox-wrap .at-a-glance {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .purplebox-wrap .at-a-glance { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 800px) {
+    .purplebox-wrap .at-a-glance { grid-template-columns: repeat(2, 1fr); }
 }

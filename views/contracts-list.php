@@ -6,6 +6,13 @@
     </a>
     <hr class="wp-header-end">
 
+    <?php if (isset($_GET['saved'])) : ?>
+        <?php if ($_GET['saved'] === 'created') : ?>
+            <div class="notice notice-success is-dismissible"><p>✅ <?php esc_html_e('Contract created successfully.', 'purplebox-storage'); ?></p></div>
+        <?php else : ?>
+            <div class="notice notice-success is-dismissible"><p>✅ <?php esc_html_e('Contract updated successfully.', 'purplebox-storage'); ?></p></div>
+        <?php endif; ?>
+    <?php endif; ?>
     <?php if (isset($_GET['ended'])) : ?>
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Contract ended. Unit returned to available inventory.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>

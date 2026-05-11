@@ -55,12 +55,15 @@ class Purplebox_Units_Controller {
             'quantity'     => 1,
             'facility'     => $_POST['facility'] ?? '',
             'features'     => $_POST['features'] ?? [],
-            'notes'        => $_POST['notes'] ?? '',
+            'notes'          => $_POST['notes'] ?? '',
+            'manual_status'  => $_POST['manual_status'] ?? '',
         ];
 
-        $id = Purplebox_DB::save_unit($data);
+        $is_new = empty($data['id']);
+        $id     = Purplebox_DB::save_unit($data);
 
-        wp_redirect(admin_url('admin.php?page=purplebox-unit-edit&unit_id=' . $id . '&saved=1'));
+        $msg = $is_new ? 'created' : 'updated';
+        wp_redirect(admin_url('admin.php?page=purplebox-units&saved=' . $msg));
         exit;
     }
 }

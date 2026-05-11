@@ -90,7 +90,8 @@
                                 <?php foreach ($available_units as $u) : ?>
                                     <tr>
                                         <td>
-                                            <input type="checkbox" name="unit_ids[]" value="<?php echo esc_attr($u['id']); ?>" class="purplebox-unit-checkbox" id="unit-<?php echo esc_attr($u['id']); ?>">
+                                            <?php $is_preselected = !empty($preselected_unit_ids) && in_array((int) $u['id'], $preselected_unit_ids, true); ?>
+                                            <input type="checkbox" name="unit_ids[]" value="<?php echo esc_attr($u['id']); ?>" class="purplebox-unit-checkbox" id="unit-<?php echo esc_attr($u['id']); ?>"<?php checked($is_preselected); ?>>
                                         </td>
                                         <td><label for="unit-<?php echo esc_attr($u['id']); ?>"><strong><?php echo esc_html($u['unit_number']); ?></strong></label></td>
                                         <td><?php echo !empty($u['display_name']) ? esc_html($u['display_name']) : '<span style="color:#50575e;">—</span>'; ?></td>
@@ -181,6 +182,13 @@
                                 <p class="description"><?php esc_html_e('Upload the signed contract document (PDF only).', 'purplebox-storage'); ?></p>
                             </td>
                         </tr>
+                        <tr>
+                            <th><label for="notes"><?php esc_html_e('Internal Notes', 'purplebox-storage'); ?></label></th>
+                            <td>
+                                <textarea name="notes" id="notes" rows="3" class="large-text" placeholder="<?php esc_attr_e('e.g. Special access arrangements, deposit notes, follow-up required…', 'purplebox-storage'); ?>"></textarea>
+                                <p class="description"><?php esc_html_e('Visible to admin only. Not printed on agreements.', 'purplebox-storage'); ?></p>
+                            </td>
+                        </tr>
                     </table>
                     <div class="submit-row">
                         <button type="button" class="button purplebox-prev-step"><?php esc_html_e('← Back', 'purplebox-storage'); ?></button>
@@ -229,6 +237,10 @@
                         <tr>
                             <th><?php esc_html_e('Auto-renew', 'purplebox-storage'); ?></th>
                             <td id="review-renew">—</td>
+                        </tr>
+                        <tr id="review-notes-row" style="display:none;">
+                            <th><?php esc_html_e('Notes', 'purplebox-storage'); ?></th>
+                            <td id="review-notes" style="white-space:pre-wrap;">—</td>
                         </tr>
                     </table>
                     <div class="submit-row">

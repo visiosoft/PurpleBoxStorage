@@ -76,6 +76,9 @@ class Purplebox_Contracts_Controller {
         $contract['unit_details']  = Purplebox_DB::get_unit_details_from_ids($contract['unit_ids'] ?? '[]');
         $contract['unit_numbers']  = implode(', ', array_column($contract['unit_details'], 'unit_number'));
 
+        // Load full tenant details for the detail page
+        $tenant = Purplebox_DB::get_tenant($contract['tenant_id']);
+
         include PURPLEBOX_PLUGIN_DIR . 'views/contract-detail.php';
     }
 
@@ -84,8 +87,25 @@ class Purplebox_Contracts_Controller {
             wp_die(__('Unauthorized', 'purplebox-storage'));
         }
 
-        $preselected_tenant_id = absint($_GET['tenant_id'] ?? 0);
-        $preselected_tenant = $preselected_tenant_id ? Purplebox_DB::get_tenant($preselected_tenant_id) : null;
+        $preselected_tenant_id  = absint($_GET['tenant_id'] ?? 0);
+        $preselected_tenant     = $preselected_tenant_id ? Purplebox_DB::get_tenant($preselected_tenant_id) : null;
+        $preselected_unit_ids   = [];
+
+        // Renew-from support: pre-fill tenant + units from an existing contract
+        $renew_from = absint($_GET['renew_from'] ?? 0);
+        if ($renew_from) {
+            $renew_contract = Purplebox_DB::get_contract($renew_from);
+            if ($renew_contract) {
+                if (!$preselected_tenant_id) {
+                    $preselected_tenant_id = absint($renew_contract['tenant_id']);
+                    $preselected_tenant    = Purplebox_DB::get_tenant($preselected_tenant_id);
+                }
+                $renew_unit_ids = json_decode($renew_contract['unit_ids'] ?? '[]', true);
+                if (is_array($renew_unit_ids)) {
+                    $preselected_unit_ids = array_map('absint', $renew_unit_ids);
+                }
+            }
+        }
 
         $tenants         = Purplebox_DB::get_tenants(['status' => 'active', 'per_page' => 200]);
         $available_units = Purplebox_DB::get_available_units();
@@ -118,6 +138,7 @@ class Purplebox_Contracts_Controller {
             'payment_method'     => sanitize_text_field($_POST['payment_method'] ?? 'Cash'),
             'next_payment_date'  => sanitize_text_field($_POST['next_payment_date'] ?? ''),
             'auto_renew'         => !empty($_POST['auto_renew']) ? 1 : 0,
+            'notes'              => sanitize_textarea_field($_POST['notes'] ?? ''),
             'status'             => 'active',
         ];
 
@@ -141,7 +162,7 @@ class Purplebox_Contracts_Controller {
             exit;
         }
 
-        wp_redirect(admin_url('admin.php?page=purplebox-contracts&action=view&contract_id=' . $result . '&created=1'));
+        wp_redirect(admin_url('admin.php?page=purplebox-contracts&saved=created'));
         exit;
     }
 
@@ -158,6 +179,24 @@ class Purplebox_Contracts_Controller {
         }
 
         $contract['unit_details'] = Purplebox_DB::get_unit_details_from_ids($contract['unit_ids'] ?? '[]');
+        $current_unit_ids = array_map('intval', json_decode($contract['unit_ids'] ?? '[]', true) ?: []);
+
+        // Load tenants for the dropdown
+        $tenants = Purplebox_DB::get_tenants(['status' => 'active', 'per_page' => 200]);
+
+        // Build selectable units: available units + units already on this contract (deduped)
+        $available_units  = Purplebox_DB::get_available_units();
+        $current_units    = $contract['unit_details'];
+        $selectable_units = $available_units;
+        $available_ids    = array_map(function($u) { return (int) $u['id']; }, $available_units);
+        foreach ($current_units as $cu) {
+            if (!in_array((int) $cu['id'], $available_ids)) {
+                $selectable_units[] = $cu;
+            }
+        }
+        usort($selectable_units, function($a, $b) {
+            return strcmp($a['unit_number'], $b['unit_number']);
+        });
 
         include PURPLEBOX_PLUGIN_DIR . 'views/contract-edit.php';
     }
@@ -173,32 +212,55 @@ class Purplebox_Contracts_Controller {
             exit;
         }
 
-        // Load existing contract to preserve tenant_id + unit_ids
+        // Load existing contract
         $existing = Purplebox_DB::get_contract($contract_id);
         if (!$existing) {
             wp_die(__('Contract not found.', 'purplebox-storage'));
         }
 
+        $move_in_date   = sanitize_text_field($_POST['move_in_date'] ?? $existing['move_in_date']);
         $move_out_date  = sanitize_text_field($_POST['move_out_date'] ?? '');
         $open_ended     = !empty($_POST['open_ended']);
         $duration_weeks = !empty($_POST['duration_weeks']) ? absint($_POST['duration_weeks']) : null;
 
+        // Accept tenant and units from POST (editable now)
+        $tenant_id = absint($_POST['tenant_id'] ?? $existing['tenant_id']);
+        $unit_ids  = !empty($_POST['unit_ids'])
+            ? array_map('absint', (array) $_POST['unit_ids'])
+            : json_decode($existing['unit_ids'] ?? '[]', true);
+
+        // Validate newly-added units for availability
+        $existing_unit_ids = array_map('intval', json_decode($existing['unit_ids'] ?? '[]', true) ?: []);
+        $newly_added = array_diff($unit_ids, $existing_unit_ids);
+        if (!empty($newly_added)) {
+            $rented_ids = Purplebox_DB::get_all_rented_unit_ids();
+            foreach ($newly_added as $uid) {
+                $u = Purplebox_DB::get_unit($uid);
+                $is_manual = !empty($u['manual_status']) && $u['manual_status'] === 'rented';
+                if ($is_manual || in_array($uid, $rented_ids)) {
+                    wp_redirect(admin_url('admin.php?page=purplebox-contracts&action=edit&contract_id=' . $contract_id . '&error=no_availability'));
+                    exit;
+                }
+            }
+        }
+
         // Compute duration_weeks from dates if not manually supplied
-        if (!$duration_weeks && !$open_ended && $move_out_date && $existing['move_in_date']) {
-            $diff = (strtotime($move_out_date) - strtotime($existing['move_in_date'])) / 86400;
+        if (!$duration_weeks && !$open_ended && $move_out_date && $move_in_date) {
+            $diff = (strtotime($move_out_date) - strtotime($move_in_date)) / 86400;
             $duration_weeks = max(1, round($diff / 7));
         }
 
         $data = [
             'id'               => $contract_id,
-            'tenant_id'        => $existing['tenant_id'],
-            'unit_ids'         => json_decode($existing['unit_ids'] ?? '[]', true),
-            'move_in_date'     => sanitize_text_field($_POST['move_in_date'] ?? $existing['move_in_date']),
+            'tenant_id'        => $tenant_id,
+            'unit_ids'         => $unit_ids,
+            'move_in_date'     => $move_in_date,
             'move_out_date'    => (!$open_ended && $move_out_date) ? $move_out_date : null,
             'duration_weeks'   => $duration_weeks,
             'payment_method'   => sanitize_text_field($_POST['payment_method'] ?? 'Cash'),
             'next_payment_date'=> sanitize_text_field($_POST['next_payment_date'] ?? ''),
             'auto_renew'       => !empty($_POST['auto_renew']) ? 1 : 0,
+            'notes'            => sanitize_textarea_field($_POST['notes'] ?? $existing['notes'] ?? ''),
             'status'           => sanitize_text_field($_POST['status'] ?? $existing['status']),
             'signed_pdf_path'  => $existing['signed_pdf_path'] ?? null,
         ];
@@ -219,7 +281,7 @@ class Purplebox_Contracts_Controller {
 
         Purplebox_DB::save_contract($data);
 
-        wp_redirect(admin_url('admin.php?page=purplebox-contracts&action=view&contract_id=' . $contract_id . '&updated=1'));
+        wp_redirect(admin_url('admin.php?page=purplebox-contracts&saved=updated'));
         exit;
     }
 
@@ -346,10 +408,10 @@ class Purplebox_Contracts_Controller {
                 const { height } = page1.getSize(); // 2000 x 2830 pt
 
                 const font     = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                const fontSize = 20;
-                // off: calibrated so text sits inside each box.
-                // -32 = bottom edge, +22 = above box, so ~-5 centres nicely.
-                const off = -5;
+                const fontSize = 26;
+                // off: nudge text down so it sits centred inside each row box.
+                // Larger font needs a bigger downward shift to avoid clipping the top.
+                const off = -8;
                 const fields = [
                     { text: data.full_name, x: 440,  y: height - 1096 + off },
                     { text: data.address,   x: 440,  y: height - 1211 + off },
@@ -371,20 +433,21 @@ class Purplebox_Contracts_Controller {
                     });
                 }
 
-                // Access persons: name (bold-size), phone + ID smaller below
-                const accessXs = [410, 930, 1450];
+                // Access persons: name row, then phone + ID on lines below
+                const accessXs   = [410, 930, 1450];
                 const accessBase = height - 1789 + off;
-                const subSize = 16;
+                const subSize    = 20;
+                const lineGap    = 34;
                 [data.access1, data.access2, data.access3].forEach((ap, i) => {
                     const x = accessXs[i];
                     if (ap.name) {
-                        page1.drawText(ap.name, { x, y: accessBase,        size: fontSize, font, color: PDFLib.rgb(0,0,0) });
+                        page1.drawText(ap.name,  { x, y: accessBase,             size: fontSize, font, color: PDFLib.rgb(0,0,0) });
                     }
                     if (ap.phone) {
-                        page1.drawText(ap.phone, { x, y: accessBase - 28,  size: subSize,  font, color: PDFLib.rgb(0,0,0) });
+                        page1.drawText(ap.phone, { x, y: accessBase - lineGap,   size: subSize,  font, color: PDFLib.rgb(0,0,0) });
                     }
                     if (ap.id) {
-                        page1.drawText(ap.id,    { x, y: accessBase - 52,  size: subSize,  font, color: PDFLib.rgb(0,0,0) });
+                        page1.drawText(ap.id,    { x, y: accessBase - lineGap*2, size: subSize,  font, color: PDFLib.rgb(0,0,0) });
                     }
                 });
 

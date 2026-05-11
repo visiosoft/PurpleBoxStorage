@@ -146,6 +146,7 @@ class Purplebox_DB {
             'facility'         => sanitize_text_field($data['facility'] ?? 'PurpleBox Al Quoz'),
             'features'         => !empty($data['features']) ? wp_json_encode($data['features']) : null,
             'notes'            => sanitize_textarea_field($data['notes'] ?? ''),
+            'manual_status'    => !empty($data['manual_status']) ? sanitize_text_field($data['manual_status']) : null,
         ];
 
         if (!empty($data['id'])) {
@@ -166,7 +167,10 @@ class Purplebox_DB {
      * Check if a unit is currently rented (part of any active contract).
      */
     public static function is_unit_rented($unit_id) {
-        $unit     = self::get_unit($unit_id);
+        $unit = self::get_unit($unit_id);
+        if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+            return true;
+        }
         $quantity = max(1, (int) ($unit['quantity'] ?? 1));
         $counts   = self::get_rented_count_per_unit();
         return ($counts[(int) $unit_id] ?? 0) >= $quantity;
@@ -176,7 +180,10 @@ class Purplebox_DB {
      * How many slots are still available for a unit.
      */
     public static function get_unit_available_slots($unit_id, $rented_counts = null) {
-        $unit     = self::get_unit($unit_id);
+        $unit = self::get_unit($unit_id);
+        if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+            return 0;
+        }
         $quantity = max(1, (int) ($unit['quantity'] ?? 1));
         if ($rented_counts === null) {
             $rented_counts = self::get_rented_count_per_unit();
@@ -192,6 +199,9 @@ class Purplebox_DB {
         $rented_counts = self::get_rented_count_per_unit();
         $available     = [];
         foreach ($all_units as $unit) {
+            if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+                continue;
+            }
             $qty    = max(1, (int) ($unit['quantity'] ?? 1));
             $rented = $rented_counts[(int) $unit['id']] ?? 0;
             if ($rented < $qty) {
@@ -505,7 +515,9 @@ class Purplebox_DB {
         if (empty($data['id'])) {
             $rented = self::get_all_rented_unit_ids();
             foreach ($unit_ids as $uid) {
-                if (in_array($uid, $rented)) {
+                $u = self::get_unit($uid);
+                $is_manual = !empty($u['manual_status']) && $u['manual_status'] === 'rented';
+                if ($is_manual || in_array($uid, $rented)) {
                     return new \WP_Error('no_availability', __('One or more selected units are already rented.', 'purplebox-storage'));
                 }
             }
@@ -516,11 +528,13 @@ class Purplebox_DB {
             'unit_ids'           => wp_json_encode($unit_ids),
             'move_in_date'       => sanitize_text_field($data['move_in_date']),
             'move_out_date'      => !empty($data['move_out_date']) ? sanitize_text_field($data['move_out_date']) : null,
+            'duration_weeks'     => !empty($data['duration_weeks']) ? absint($data['duration_weeks']) : null,
             'first_payment_date' => !empty($data['first_payment_date']) ? sanitize_text_field($data['first_payment_date']) : null,
             'payment_method'     => sanitize_text_field($data['payment_method'] ?? 'Cash'),
             'next_payment_date'  => !empty($data['next_payment_date']) ? sanitize_text_field($data['next_payment_date']) : null,
             'auto_renew'         => !empty($data['auto_renew']) ? 1 : 0,
             'signed_pdf_path'    => !empty($data['signed_pdf_path']) ? sanitize_text_field($data['signed_pdf_path']) : null,
+            'notes'              => !empty($data['notes']) ? sanitize_textarea_field($data['notes']) : null,
             'status'             => sanitize_text_field($data['status'] ?? 'active'),
         ];
 
@@ -593,12 +607,16 @@ class Purplebox_DB {
         $rented_counts = self::get_rented_count_per_unit();
 
         // Total rented slots (capped at each unit's quantity)
-        $all_units_qty = $wpdb->get_results("SELECT id, quantity FROM $units_table", ARRAY_A) ?? [];
+        $all_units_qty = $wpdb->get_results("SELECT id, quantity, manual_status FROM $units_table", ARRAY_A) ?? [];
         $total_rented = 0;
         foreach ($all_units_qty as $u) {
-            $qty    = max(1, (int) $u['quantity']);
-            $rented = min($qty, $rented_counts[(int) $u['id']] ?? 0);
-            $total_rented += $rented;
+            $qty = max(1, (int) $u['quantity']);
+            if (!empty($u['manual_status']) && $u['manual_status'] === 'rented') {
+                $total_rented += $qty;
+            } else {
+                $rented = min($qty, $rented_counts[(int) $u['id']] ?? 0);
+                $total_rented += $rented;
+            }
         }
 
         $total_available = max(0, $total_units - $total_rented);
@@ -693,7 +711,7 @@ class Purplebox_DB {
         $table = self::units_table();
 
         $all_units     = $wpdb->get_results(
-            "SELECT id, unit_number, display_name, size_category, floor, COALESCE(quantity,1) AS quantity FROM $table ORDER BY unit_number ASC",
+            "SELECT id, unit_number, display_name, size_category, floor, COALESCE(quantity,1) AS quantity, manual_status FROM $table ORDER BY unit_number ASC",
             ARRAY_A
         ) ?? [];
         $rented_counts = self::get_rented_count_per_unit();
@@ -702,7 +720,11 @@ class Purplebox_DB {
         foreach ($all_units as $unit) {
             $size   = $unit['size_category'];
             $qty    = max(1, (int) $unit['quantity']);
-            $rented = min($qty, $rented_counts[(int) $unit['id']] ?? 0);
+            if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+                $rented = $qty;
+            } else {
+                $rented = min($qty, $rented_counts[(int) $unit['id']] ?? 0);
+            }
             $avail  = $qty - $rented;
 
             if (!isset($groups[$size])) {
@@ -812,7 +834,7 @@ class Purplebox_DB {
         $table = self::units_table();
 
         $units = $wpdb->get_results(
-            "SELECT id, unit_group FROM $table WHERE unit_group IS NOT NULL AND unit_group != ''",
+            "SELECT id, unit_group, manual_status FROM $table WHERE unit_group IS NOT NULL AND unit_group != ''",
             ARRAY_A
         );
         if (empty($units)) return [];
@@ -826,7 +848,8 @@ class Purplebox_DB {
                 $stocks[$g] = ['total' => 0, 'available' => 0];
             }
             $stocks[$g]['total']++;
-            if (!in_array((int) $u['id'], $rented_ids)) {
+            $is_manual = !empty($u['manual_status']) && $u['manual_status'] === 'rented';
+            if (!$is_manual && !in_array((int) $u['id'], $rented_ids)) {
                 $stocks[$g]['available']++;
             }
         }
@@ -856,6 +879,38 @@ class Purplebox_DB {
              ORDER BY c.move_out_date ASC",
             $today, $today, $deadline
         ), ARRAY_A);
+    }
+
+    /**
+     * Get tenants whose Emirates ID or Passport expires within $days days.
+     * Returns array with keys: id, client_id, full_name, phones,
+     *   eid_expiry, eid_days_left, passport_expiry, passport_days_left.
+     */
+    public static function get_expiring_documents($days = 60) {
+        global $wpdb;
+        $tt       = self::tenants_table();
+        $today    = current_time('Y-m-d');
+        $deadline = date('Y-m-d', strtotime("+{$days} days", strtotime($today)));
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT id, client_id, full_name, phones,
+                    eid_expiry, passport_expiry,
+                    DATEDIFF(eid_expiry, %s)        AS eid_days_left,
+                    DATEDIFF(passport_expiry, %s)   AS passport_days_left
+             FROM {$tt}
+             WHERE status = 'active'
+               AND (
+                     (eid_expiry      IS NOT NULL AND eid_expiry      BETWEEN %s AND %s)
+                  OR (passport_expiry IS NOT NULL AND passport_expiry BETWEEN %s AND %s)
+               )
+             ORDER BY LEAST(
+                 COALESCE(eid_expiry, '9999-12-31'),
+                 COALESCE(passport_expiry, '9999-12-31')
+             ) ASC",
+            $today, $today,
+            $today, $deadline,
+            $today, $deadline
+        ), ARRAY_A) ?? [];
     }
 
     /**
@@ -901,14 +956,19 @@ class Purplebox_DB {
         $rented_counts = self::get_rented_count_per_unit();
         $result = [];
         foreach ($units as $unit) {
-            $qty    = max(1, (int)($unit['quantity'] ?? 1));
-            $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            $qty = max(1, (int)($unit['quantity'] ?? 1));
+            if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+                $rented = $qty;
+            } else {
+                $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            }
             $avail  = $qty - $rented;
             $ustatus = ($avail === 0) ? 'rented' : 'available';
             if ($status && $status !== $ustatus) continue;
             $unit['rented_count'] = $rented;
             $unit['avail_count']  = $avail;
             $unit['unit_status']  = $ustatus;
+            $unit['is_manual']    = !empty($unit['manual_status']) && $unit['manual_status'] === 'rented';
             $unit['features_arr'] = !empty($unit['features']) ? (json_decode($unit['features'], true) ?? []) : [];
             $result[] = $unit;
         }
@@ -1060,7 +1120,7 @@ class Purplebox_DB {
         $ct    = self::contracts_table();
         $today = current_time('Y-m-d');
 
-        $all_units     = $wpdb->get_results("SELECT id, unit_number, size_category, floor, quantity FROM $ut ORDER BY unit_number ASC", ARRAY_A) ?? [];
+        $all_units     = $wpdb->get_results("SELECT id, unit_number, size_category, floor, quantity, manual_status FROM $ut ORDER BY unit_number ASC", ARRAY_A) ?? [];
         $rented_counts = self::get_rented_count_per_unit();
 
         $by_size  = [];
@@ -1068,8 +1128,12 @@ class Purplebox_DB {
         $totals   = ['total' => 0, 'rented' => 0, 'available' => 0];
 
         foreach ($all_units as $unit) {
-            $qty    = max(1, (int)($unit['quantity'] ?? 1));
-            $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            $qty = max(1, (int)($unit['quantity'] ?? 1));
+            if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') {
+                $rented = $qty;
+            } else {
+                $rented = min($qty, $rented_counts[(int)$unit['id']] ?? 0);
+            }
             $avail  = $qty - $rented;
             $size   = $unit['size_category'];
             $floor  = $unit['floor'];

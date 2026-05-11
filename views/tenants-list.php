@@ -6,6 +6,13 @@
     </a>
     <hr class="wp-header-end">
 
+    <?php if (isset($_GET['saved'])) : ?>
+        <?php if ($_GET['saved'] === 'created') : ?>
+            <div class="notice notice-success is-dismissible"><p>✅ <?php esc_html_e('Tenant added successfully.', 'purplebox-storage'); ?></p></div>
+        <?php else : ?>
+            <div class="notice notice-success is-dismissible"><p>✅ <?php esc_html_e('Tenant updated successfully.', 'purplebox-storage'); ?></p></div>
+        <?php endif; ?>
+    <?php endif; ?>
     <?php if (isset($_GET['deleted'])) : ?>
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Tenant deleted.', 'purplebox-storage'); ?></p></div>
     <?php endif; ?>

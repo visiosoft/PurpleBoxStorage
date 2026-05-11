@@ -85,6 +85,7 @@
             var payment     = $('#payment_method option:selected').text().trim();
             var nextPay     = $('#next_payment_date').val();
             var autoRenew   = $('input[name="auto_renew"]').is(':checked');
+            var notes       = $('#notes').val().trim();
 
             $('#review-tenant').text(tenantText);
             $('#review-units').html(unitLabels.length ? unitLabels.join('<br>') : '—');
@@ -94,6 +95,13 @@
             $('#review-payment').text(payment || '—');
             $('#review-next-payment').text(nextPay || '—');
             $('#review-renew').text(autoRenew ? 'Yes' : 'No');
+
+            if (notes) {
+                $('#review-notes').text(notes);
+                $('#review-notes-row').show();
+            } else {
+                $('#review-notes-row').hide();
+            }
         }
     }
 

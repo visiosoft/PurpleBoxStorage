@@ -57,9 +57,15 @@
                                 <?php
                                 $phones = $tenant['phones_array'] ?? [''];
                                 foreach ($phones as $index => $phone) :
+                                    $wa_num = preg_replace('/[^0-9]/', '', $phone);
                                 ?>
                                 <div class="purplebox-phone-row" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
                                     <input type="tel" name="phones[]" value="<?php echo esc_attr($phone); ?>" class="regular-text" placeholder="+971 5X XXX XXXX"<?php echo $index === 0 ? ' required' : ''; ?>>
+                                    <?php if ($wa_num) : ?>
+                                        <a href="https://wa.me/<?php echo esc_attr($wa_num); ?>" target="_blank" class="pb-wa-btn" title="<?php esc_attr_e('Open WhatsApp', 'purplebox-storage'); ?>">
+                                            <?php esc_html_e('WhatsApp', 'purplebox-storage'); ?>
+                                        </a>
+                                    <?php endif; ?>
                                     <?php if ($index > 0) : ?>
                                         <button type="button" class="button purplebox-remove-phone">✕</button>
                                     <?php endif; ?>

@@ -8,12 +8,16 @@
     </a>
     <hr class="wp-header-end">
 
+    <?php if (isset($_GET['error']) && $_GET['error'] === 'no_availability') : ?>
+        <div class="notice notice-error is-dismissible"><p><?php esc_html_e('One or more newly selected units are already rented. Please choose different units.', 'purplebox-storage'); ?></p></div>
+    <?php endif; ?>
+
     <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="purplebox_action" value="update_contract">
         <input type="hidden" name="contract_id"     value="<?php echo esc_attr($contract['id']); ?>">
         <?php wp_nonce_field('purplebox_update_contract', 'purplebox_nonce'); ?>
 
-        <!-- Read-only info -->
+        <!-- Tenant & Units -->
         <div class="postbox">
             <div class="postbox-header">
                 <h2><?php esc_html_e('Contract Info', 'purplebox-storage'); ?></h2>
@@ -24,28 +28,64 @@
             <div class="inside">
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th><?php esc_html_e('Tenant', 'purplebox-storage'); ?></th>
+                        <th><label for="tenant_id"><?php esc_html_e('Tenant', 'purplebox-storage'); ?> <span class="required">*</span></label></th>
                         <td>
-                            <strong><?php echo esc_html($contract['tenant_name'] ?? '—'); ?></strong>
-                            <?php if (!empty($contract['tenant_client_id'])) : ?>
-                                <span style="color:#50575e; margin-left:6px;"><?php echo esc_html($contract['tenant_client_id']); ?></span>
-                            <?php endif; ?>
-                            <p class="description"><?php esc_html_e('Tenant cannot be changed. End this contract and create a new one if needed.', 'purplebox-storage'); ?></p>
+                            <select id="tenant_id" name="tenant_id" required style="min-width:300px;">
+                                <?php foreach ($tenants as $t) :
+                                    $phones = json_decode($t['phones'] ?? '[]', true);
+                                    $phone  = is_array($phones) && !empty($phones) ? $phones[0] : '';
+                                    $label  = $t['client_id'] . ' — ' . $t['full_name'];
+                                    if ($phone) $label .= ' (' . $phone . ')';
+                                ?>
+                                    <option value="<?php echo esc_attr($t['id']); ?>" <?php selected((int) $contract['tenant_id'], (int) $t['id']); ?>>
+                                        <?php echo esc_html($label); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=purplebox-tenant-edit')); ?>" target="_blank" style="margin-left:8px;">
+                                <?php esc_html_e('+ Add new tenant', 'purplebox-storage'); ?>
+                            </a>
                         </td>
                     </tr>
                     <tr>
-                        <th><?php esc_html_e('Storage Units', 'purplebox-storage'); ?></th>
+                        <th><?php esc_html_e('Storage Units', 'purplebox-storage'); ?> <span class="required">*</span></th>
                         <td>
-                            <?php foreach ($contract['unit_details'] as $ud) : ?>
-                                <div style="margin-bottom:4px;">
-                                    <strong><?php echo esc_html($ud['unit_number']); ?></strong>
-                                    <?php if (!empty($ud['display_name'])) : ?>
-                                        — <?php echo esc_html($ud['display_name']); ?>
-                                    <?php endif; ?>
-                                    <span style="color:#50575e; margin-left:6px;"><?php echo esc_html($ud['size_category'] . ' · ' . $ud['floor']); ?></span>
+                            <?php if (empty($selectable_units)) : ?>
+                                <div class="notice notice-warning inline"><p><?php esc_html_e('No units available.', 'purplebox-storage'); ?></p></div>
+                            <?php else : ?>
+                                <div style="max-height:250px; overflow-y:auto; border:1px solid #c3c4c7; border-radius:4px; padding:0;">
+                                    <table class="widefat striped" style="border:0;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:30px;"></th>
+                                                <th><?php esc_html_e('Unit #', 'purplebox-storage'); ?></th>
+                                                <th><?php esc_html_e('Name / Label', 'purplebox-storage'); ?></th>
+                                                <th><?php esc_html_e('Size', 'purplebox-storage'); ?></th>
+                                                <th><?php esc_html_e('Floor', 'purplebox-storage'); ?></th>
+                                                <th><?php esc_html_e('Price (AED)', 'purplebox-storage'); ?></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($selectable_units as $su) :
+                                                $is_checked = in_array((int) $su['id'], $current_unit_ids);
+                                                $price_display = !empty($su['discounted_price'])
+                                                    ? '<del style="color:#50575e;">AED ' . number_format((float)$su['price'], 2) . '</del> <strong style="color:#00691f;">AED ' . number_format((float)$su['discounted_price'], 2) . '</strong>'
+                                                    : (!empty($su['price']) ? 'AED ' . number_format((float)$su['price'], 2) : '—');
+                                            ?>
+                                                <tr>
+                                                    <td><input type="checkbox" name="unit_ids[]" value="<?php echo esc_attr($su['id']); ?>" <?php checked($is_checked); ?>></td>
+                                                    <td><strong><?php echo esc_html($su['unit_number']); ?></strong></td>
+                                                    <td><?php echo esc_html($su['display_name'] ?? '—'); ?></td>
+                                                    <td><?php echo esc_html($su['size_category']); ?></td>
+                                                    <td><?php echo esc_html($su['floor']); ?></td>
+                                                    <td><?php echo $price_display; ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            <?php endforeach; ?>
-                            <p class="description"><?php esc_html_e('Units cannot be changed here. Use "Cancel this unit" on the contract detail page.', 'purplebox-storage'); ?></p>
+                                <p class="description"><?php esc_html_e('Select one or more units for this contract. Units already on this contract are pre-checked.', 'purplebox-storage'); ?></p>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 </table>
@@ -141,6 +181,21 @@
                                 <option value="ended"  <?php selected($contract['status'], 'ended');  ?>><?php esc_html_e('Ended',      'purplebox-storage'); ?></option>
                             </select>
                             <p class="description"><?php esc_html_e('Setting to "Ended" frees up the unit(s) in inventory.', 'purplebox-storage'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="postbox">
+            <div class="postbox-header"><h2><?php esc_html_e('Internal Notes', 'purplebox-storage'); ?></h2></div>
+            <div class="inside">
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th><label for="notes"><?php esc_html_e('Notes', 'purplebox-storage'); ?></label></th>
+                        <td>
+                            <textarea id="notes" name="notes" rows="4" class="large-text" placeholder="<?php esc_attr_e('e.g. Special access arrangements, deposit notes, follow-up required…', 'purplebox-storage'); ?>"><?php echo esc_textarea($contract['notes'] ?? ''); ?></textarea>
+                            <p class="description"><?php esc_html_e('Visible to admin only. Not printed on agreements.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
                 </table>

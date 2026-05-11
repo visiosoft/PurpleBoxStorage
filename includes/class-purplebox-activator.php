@@ -36,6 +36,7 @@ class Purplebox_Activator {
             facility varchar(100) NOT NULL DEFAULT 'PurpleBox Al Quoz',
             features text DEFAULT NULL,
             notes text DEFAULT NULL,
+            manual_status varchar(20) DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -70,10 +71,12 @@ class Purplebox_Activator {
             move_in_date date NOT NULL,
             move_out_date date DEFAULT NULL,
             duration_weeks int(11) DEFAULT NULL,
+            first_payment_date date DEFAULT NULL,
             payment_method varchar(30) NOT NULL DEFAULT 'Cash',
             next_payment_date date DEFAULT NULL,
             auto_renew tinyint(1) NOT NULL DEFAULT 1,
             signed_pdf_path varchar(500) DEFAULT NULL,
+            notes text DEFAULT NULL,
             status varchar(20) NOT NULL DEFAULT 'active',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -153,6 +156,7 @@ class Purplebox_Activator {
             'discount_pct'     => "ALTER TABLE $units_table ADD COLUMN discount_pct decimal(5,2) DEFAULT NULL AFTER discounted_price",
             'quantity'         => "ALTER TABLE $units_table ADD COLUMN quantity int(11) NOT NULL DEFAULT 1 AFTER discount_pct",
             'unit_group'       => "ALTER TABLE $units_table ADD COLUMN unit_group varchar(100) DEFAULT NULL AFTER quantity",
+            'manual_status'    => "ALTER TABLE $units_table ADD COLUMN manual_status varchar(20) DEFAULT NULL AFTER notes",
         ];
         foreach ($units_add as $col => $sql) {
             if (!in_array($col, $units_columns)) {
@@ -180,6 +184,7 @@ class Purplebox_Activator {
             );
             $contracts_add = [
                 'first_payment_date' => "ALTER TABLE $contracts_table ADD COLUMN first_payment_date date DEFAULT NULL AFTER move_out_date",
+                'notes'              => "ALTER TABLE $contracts_table ADD COLUMN notes text DEFAULT NULL AFTER signed_pdf_path",
             ];
             foreach ($contracts_add as $col => $sql) {
                 if (!in_array($col, $contracts_columns)) {

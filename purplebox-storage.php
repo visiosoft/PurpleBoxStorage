@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Storage
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 2.4.4
+ * Version: 3.1.1
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,28 +15,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '2.4.4');
+define('PURPLEBOX_VERSION', '3.1.1');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
-// Remove any old broken plugin entries left over from previous installs.
-add_action('init', function () {
-    $old_entries = [
-        'purplebox-plugin/purplebox-storage.php',
-    ];
-    $active = get_option('active_plugins', []);
-    $changed = false;
-    foreach ($old_entries as $old) {
-        if (($key = array_search($old, $active, true)) !== false) {
-            unset($active[$key]);
-            $changed = true;
-        }
-    }
-    if ($changed) {
-        update_option('active_plugins', array_values($active));
-    }
-});
 
 require_once PURPLEBOX_PLUGIN_DIR . 'includes/class-purplebox-activator.php';
 require_once PURPLEBOX_PLUGIN_DIR . 'includes/class-purplebox-deactivator.php';

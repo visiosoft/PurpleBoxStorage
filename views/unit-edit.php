@@ -13,7 +13,11 @@
     <?php endif; ?>
 
     <?php if ($unit && $is_rented) : ?>
-        <div class="notice notice-warning"><p><?php esc_html_e('This unit is currently rented under an active contract.', 'purplebox-storage'); ?></p></div>
+        <?php if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') : ?>
+            <div class="notice notice-warning"><p><?php esc_html_e('This unit is manually marked as booked (not via a contract).', 'purplebox-storage'); ?></p></div>
+        <?php else : ?>
+            <div class="notice notice-warning"><p><?php esc_html_e('This unit is currently rented under an active contract.', 'purplebox-storage'); ?></p></div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <form method="post">
@@ -26,9 +30,19 @@
             <div class="postbox-header">
                 <h2><?php esc_html_e('Unit Identity', 'purplebox-storage'); ?></h2>
                 <?php if ($unit) : ?>
-                    <span class="pill <?php echo $is_rented ? '' : 'available'; ?>" style="margin-right:12px; <?php echo $is_rented ? 'background:#e8f0fe; color:#1e4ea1;' : ''; ?>">
-                        <?php echo $is_rented ? esc_html__('Rented', 'purplebox-storage') : esc_html__('Available', 'purplebox-storage'); ?>
-                    </span>
+                    <?php if (!empty($unit['manual_status']) && $unit['manual_status'] === 'rented') : ?>
+                        <span class="pill" style="margin-right:12px; background:#fef3cd; color:#856404;">
+                            <?php esc_html_e('Manually Booked', 'purplebox-storage'); ?>
+                        </span>
+                    <?php elseif ($is_rented) : ?>
+                        <span class="pill" style="margin-right:12px; background:#e8f0fe; color:#1e4ea1;">
+                            <?php esc_html_e('Rented', 'purplebox-storage'); ?>
+                        </span>
+                    <?php else : ?>
+                        <span class="pill available" style="margin-right:12px;">
+                            <?php esc_html_e('Available', 'purplebox-storage'); ?>
+                        </span>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
             <div class="inside">
@@ -38,6 +52,17 @@
                         <td>
                             <input type="text" id="unit_number" name="unit_number" value="<?php echo esc_attr($unit['unit_number'] ?? ''); ?>" required class="regular-text" placeholder="<?php esc_attr_e('e.g. A01, G-25, F1-10', 'purplebox-storage'); ?>">
                             <p class="description"><?php esc_html_e('Internal reference code. Must be unique.', 'purplebox-storage'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="manual_status"><?php esc_html_e('Status Override', 'purplebox-storage'); ?></label></th>
+                        <td>
+                            <?php $current_manual = $unit['manual_status'] ?? ''; ?>
+                            <select id="manual_status" name="manual_status">
+                                <option value="" <?php selected($current_manual, ''); ?>><?php esc_html_e('Automatic (from contracts)', 'purplebox-storage'); ?></option>
+                                <option value="rented" <?php selected($current_manual, 'rented'); ?>><?php esc_html_e('Manually Rented / Booked', 'purplebox-storage'); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e('Set to "Manually Rented" to mark this unit as booked without creating a contract. It will appear as rented in inventory and reports.', 'purplebox-storage'); ?></p>
                         </td>
                     </tr>
                 </table>

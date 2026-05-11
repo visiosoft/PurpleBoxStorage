@@ -81,9 +81,11 @@ class Purplebox_Tenants_Controller {
             'access_id_number' => $_POST['access_id_number'] ?? [],
         ];
 
-        $id = Purplebox_DB::save_tenant($data);
+        $is_new = empty($data['id']);
+        $id     = Purplebox_DB::save_tenant($data);
 
-        wp_redirect(admin_url('admin.php?page=purplebox-tenants&action=edit&tenant_id=' . $id . '&saved=1'));
+        $msg = $is_new ? 'created' : 'updated';
+        wp_redirect(admin_url('admin.php?page=purplebox-tenants&saved=' . $msg));
         exit;
     }
 }
