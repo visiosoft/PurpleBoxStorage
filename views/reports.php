@@ -39,7 +39,7 @@ $today_label = date('d/m/Y H:i');
         $floor_filter  = sanitize_text_field($_GET['floor']  ?? '');
         $size_filter   = sanitize_text_field($_GET['size']   ?? '');
         $status_filter = sanitize_text_field($_GET['status'] ?? '');
-        $all_floors    = ['', 'Ground', 'F1', 'F2'];
+        $all_floors    = ['', 'F1', 'F2', 'F3'];
         $all_sizes     = ['', 'Locker', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
     ?>
     <div class="pb-report-toolbar no-print">
@@ -48,7 +48,7 @@ $today_label = date('d/m/Y H:i');
             <input type="hidden" name="tab"  value="inventory">
             <select name="floor" class="pb-filter-select">
                 <option value=""><?php esc_html_e('All Floors', 'purplebox-storage'); ?></option>
-                <?php foreach (['Ground','F1','F2'] as $f) : ?>
+                <?php foreach (['F1','F2','F3'] as $f) : ?>
                     <option value="<?php echo esc_attr($f); ?>" <?php selected($floor_filter,$f); ?>><?php echo esc_html($f); ?></option>
                 <?php endforeach; ?>
             </select>

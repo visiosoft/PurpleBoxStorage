@@ -157,8 +157,12 @@ class Purplebox_Units_Table extends WP_List_Table {
 
     public function column_stock($item) {
         $total  = max(1, (int) ($item['quantity'] ?? 1));
-        $rented = $this->rented_counts[(int) $item['id']] ?? 0;
-        $avail  = max(0, $total - $rented);
+        if (!empty($item['manual_status']) && $item['manual_status'] === 'rented') {
+            $avail = 0;
+        } else {
+            $rented = $this->rented_counts[(int) $item['id']] ?? 0;
+            $avail  = max(0, $total - $rented);
+        }
 
         if ($avail === 0) {
             $color = '#b32d2e';
@@ -176,6 +180,9 @@ class Purplebox_Units_Table extends WP_List_Table {
     }
 
     public function column_status($item) {
+        if (!empty($item['manual_status']) && $item['manual_status'] === 'rented') {
+            return '<span class="pill" style="background:#fef3cd; color:#856404;">' . __('Manual', 'purplebox-storage') . '</span>';
+        }
         $total     = max(1, (int) ($item['quantity'] ?? 1));
         $rented    = $this->rented_counts[(int) $item['id']] ?? 0;
         $is_rented = $rented >= $total;
@@ -219,7 +226,7 @@ class Purplebox_Units_Table extends WP_List_Table {
             <select name="floor_filter">
                 <option value=""><?php esc_html_e('All floors', 'purplebox-storage'); ?></option>
                 <?php
-                $floors = ['Ground', 'F1', 'F2'];
+                $floors = ['F1', 'F2', 'F3'];
                 $current_floor = sanitize_text_field($_REQUEST['floor_filter'] ?? '');
                 foreach ($floors as $floor) {
                     printf('<option value="%s" %s>%s</option>', esc_attr($floor), selected($current_floor, $floor, false), esc_html($floor));

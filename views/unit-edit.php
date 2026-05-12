@@ -108,8 +108,8 @@
                         <td>
                             <select id="floor" name="floor" required>
                                 <?php
-                                $floors = ['Ground', 'F1', 'F2'];
-                                $current_floor = $unit['floor'] ?? 'Ground';
+                                $floors = ['F1', 'F2', 'F3'];
+                                $current_floor = $unit['floor'] ?? 'F1';
                                 foreach ($floors as $floor) {
                                     printf('<option value="%s" %s>%s</option>', esc_attr($floor), selected($current_floor, $floor, false), esc_html($floor));
                                 }

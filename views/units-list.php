@@ -4,6 +4,11 @@
     <a href="<?php echo esc_url(admin_url('admin.php?page=purplebox-unit-edit')); ?>" class="page-title-action">
         <?php esc_html_e('Add Inventory', 'purplebox-storage'); ?>
     </a>
+    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=purplebox-units&action=seed_import'), 'purplebox_seed_import')); ?>"
+       class="page-title-action"
+       onclick="return confirm('<?php esc_attr_e('Import all units from the Excel seed data? Existing units will be skipped.', 'purplebox-storage'); ?>');">
+        <?php esc_html_e('Import from Excel', 'purplebox-storage'); ?>
+    </a>
     <hr class="wp-header-end">
 
     <?php if (isset($_GET['saved'])) : ?>
@@ -20,6 +25,12 @@
     <?php if (isset($_GET['bulk_created'])) : ?>
         <div class="notice notice-success is-dismissible"><p>
             <?php printf(esc_html__('%d units created successfully.', 'purplebox-storage'), (int) $_GET['bulk_created']); ?>
+        </p></div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['seed_imported'])) : ?>
+        <div class="notice notice-success is-dismissible"><p>
+            <?php printf(esc_html__('Excel import complete: %d units inserted, %d skipped (already exist), %d marked as rented.', 'purplebox-storage'), (int) $_GET['seed_imported'], (int) ($_GET['seed_skipped'] ?? 0), (int) ($_GET['seed_rented'] ?? 0)); ?>
         </p></div>
     <?php endif; ?>
 

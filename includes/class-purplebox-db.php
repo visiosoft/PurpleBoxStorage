@@ -138,7 +138,7 @@ class Purplebox_DB {
             'display_name'     => !empty($data['display_name']) ? sanitize_text_field($data['display_name']) : null,
             'size_category'    => sanitize_text_field($data['size_category'] ?? ''),
             'custom_size'      => !empty($data['custom_size']) ? floatval($data['custom_size']) : null,
-            'floor'            => sanitize_text_field($data['floor'] ?? 'Ground'),
+            'floor'            => sanitize_text_field($data['floor'] ?? 'F1'),
             'price'            => $price,
             'discount_pct'     => $discount_pct,
             'discounted_price' => $disc_price,

@@ -27,7 +27,7 @@ class Purplebox_Activator {
             display_name varchar(200) DEFAULT NULL,
             size_category varchar(30) NOT NULL,
             custom_size decimal(8,2) DEFAULT NULL,
-            floor varchar(20) NOT NULL DEFAULT 'Ground',
+            floor varchar(20) NOT NULL DEFAULT 'F1',
             price decimal(10,2) NOT NULL DEFAULT 0,
             discounted_price decimal(10,2) DEFAULT NULL,
             discount_pct decimal(5,2) DEFAULT NULL,
