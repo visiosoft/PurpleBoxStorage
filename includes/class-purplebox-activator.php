@@ -13,14 +13,7 @@ class Purplebox_Activator {
         $tenants_table = $wpdb->prefix . 'purplebox_tenants';
         $contracts_table = $wpdb->prefix . 'purplebox_contracts';
 
-        // Drop old tables if schema changed
-        $old_version = get_option('purplebox_db_version', '0');
-        if (version_compare($old_version, '2.0.0', '<')) {
-            $wpdb->query("DROP TABLE IF EXISTS $contracts_table");
-            $wpdb->query("DROP TABLE IF EXISTS $units_table");
-            $wpdb->query("DROP TABLE IF EXISTS $tenants_table");
-        }
-
+        // NEVER drop tables — dbDelta handles all schema changes safely.
         $sql = "CREATE TABLE $units_table (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             unit_number varchar(30) NOT NULL,

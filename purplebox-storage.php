@@ -3,7 +3,7 @@
  * Plugin Name: PurpleBox Manager
  * Plugin URI: https://purplebox.ae
  * Description: Self-storage unit and tenant management for WordPress.
- * Version: 1.0.0
+ * Version: 3.2.1
  * Author: PurpleBox
  * Text Domain: purplebox-storage
  * Domain Path: /languages
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PURPLEBOX_VERSION', '1.0.0');
+define('PURPLEBOX_VERSION', '3.2.1');
 define('PURPLEBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PURPLEBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PURPLEBOX_PLUGIN_BASENAME', plugin_basename(__FILE__));

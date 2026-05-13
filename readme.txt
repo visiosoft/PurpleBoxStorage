@@ -4,7 +4,7 @@ Tags: storage, units, tenants, contracts, management
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.0
+Stable tag: 3.2.1
 License: GPLv2 or later
 
 Self-storage unit and tenant management for WordPress.
