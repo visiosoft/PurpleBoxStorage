@@ -4,11 +4,6 @@
     <a href="<?php echo esc_url(admin_url('admin.php?page=purplebox-unit-edit')); ?>" class="page-title-action">
         <?php esc_html_e('Add Inventory', 'purplebox-storage'); ?>
     </a>
-    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=purplebox-units&action=seed_import'), 'purplebox_seed_import')); ?>"
-       class="page-title-action"
-       onclick="return confirm('<?php esc_attr_e('Import all units from the Excel seed data? Existing units will be skipped.', 'purplebox-storage'); ?>');">
-        <?php esc_html_e('Import from Excel', 'purplebox-storage'); ?>
-    </a>
     <hr class="wp-header-end">
 
     <?php if (isset($_GET['saved'])) : ?>

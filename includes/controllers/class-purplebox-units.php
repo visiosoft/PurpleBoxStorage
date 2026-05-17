@@ -140,6 +140,7 @@ class Purplebox_Units_Controller {
 
         $size_map = function($sqf) {
             if ($sqf === null) return 'Custom';
+            if ($sqf <= 8)   return '10 sq.ft.';
             if ($sqf <= 15)  return 'Locker';
             if ($sqf <= 30)  return '25 sq.ft.';
             if ($sqf <= 40)  return '35 sq.ft.';

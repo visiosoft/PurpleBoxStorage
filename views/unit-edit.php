@@ -79,7 +79,7 @@
                         <td>
                             <select id="size_category" name="size_category" required>
                                 <?php
-                                $sizes = ['Locker', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
+                                $sizes = ['Locker', '10 sq.ft.', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
                                 $current_size = $unit['size_category'] ?? '';
                                 foreach ($sizes as $size) {
                                     printf('<option value="%s" %s>%s</option>', esc_attr($size), selected($current_size, $size, false), esc_html($size));

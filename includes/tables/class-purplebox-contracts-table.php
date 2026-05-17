@@ -61,7 +61,7 @@ class Purplebox_Contracts_Table extends WP_List_Table {
     public function prepare_items() {
         $this->process_bulk_action();
 
-        $per_page = 20;
+        $per_page = 200;
         $current_page = $this->get_pagenum();
 
         $args = [

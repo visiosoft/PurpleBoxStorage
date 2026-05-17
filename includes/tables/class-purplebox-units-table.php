@@ -216,7 +216,7 @@ class Purplebox_Units_Table extends WP_List_Table {
             <select name="size">
                 <option value=""><?php esc_html_e('All sizes', 'purplebox-storage'); ?></option>
                 <?php
-                $sizes = ['Locker', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
+                $sizes = ['Locker', '10 sq.ft.', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
                 $current = sanitize_text_field($_REQUEST['size'] ?? '');
                 foreach ($sizes as $size) {
                     printf('<option value="%s" %s>%s</option>', esc_attr($size), selected($current, $size, false), esc_html($size));

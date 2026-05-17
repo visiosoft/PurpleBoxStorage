@@ -40,7 +40,7 @@ $today_label = date('d/m/Y H:i');
         $size_filter   = sanitize_text_field($_GET['size']   ?? '');
         $status_filter = sanitize_text_field($_GET['status'] ?? '');
         $all_floors    = ['', 'F1', 'F2', 'F3'];
-        $all_sizes     = ['', 'Locker', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
+        $all_sizes     = ['', 'Locker', '10 sq.ft.', '25 sq.ft.', '35 sq.ft.', '50 sq.ft.', '75 sq.ft.', '100 sq.ft.', '150 sq.ft.', '200 sq.ft.', 'Custom'];
     ?>
     <div class="pb-report-toolbar no-print">
         <form method="get" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
