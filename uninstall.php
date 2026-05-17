@@ -3,13 +3,9 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
-global $wpdb;
-
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}purplebox_contracts");
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}purplebox_units");
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}purplebox_tenants");
-
-delete_option('purplebox_db_version');
+// NOTE: Tables are intentionally preserved on uninstall to protect client data.
+// Data can only be removed manually via phpMyAdmin or a direct DB query.
+// delete_option('purplebox_db_version'); — also preserved so reinstall detects existing schema.
 
 $upload_dir = wp_upload_dir();
 $purplebox_dir = $upload_dir['basedir'] . '/purplebox';
