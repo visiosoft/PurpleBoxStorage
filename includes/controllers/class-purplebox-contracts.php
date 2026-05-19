@@ -405,22 +405,19 @@ class Purplebox_Contracts_Controller {
                 const pdfDoc    = await PDFLib.PDFDocument.load(pdfBytes0);
                 const pages     = pdfDoc.getPages();
                 const page1     = pages[0];
-                const { height } = page1.getSize(); // 2000 x 2830 pt
+                const { height } = page1.getSize(); // 1119 x 1583 pt
 
-                const font     = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                const fontSize = 26;
-                // off: nudge text down so it sits centred inside each row box.
-                // Larger font needs a bigger downward shift to avoid clipping the top.
-                const off = -8;
+                const font    = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+                const fontSize = 13;
                 const fields = [
-                    { text: data.full_name, x: 440,  y: height - 1096 + off },
-                    { text: data.address,   x: 440,  y: height - 1211 + off },
-                    { text: data.contact,   x: 520,  y: height - 1326 + off },
-                    { text: data.email,     x: 1410, y: height - 1326 + off },
-                    { text: data.emergency, x: 550,  y: height - 1441 + off },
-                    { text: data.move_in,   x: 470,  y: height - 1556 + off },
-                    { text: data.move_out,  x: 1405, y: height - 1556 + off },
-                    { text: data.unit_size, x: 480,  y: height - 1671 + off },
+                    { text: data.full_name, x: 240, y: height - 618 },
+                    { text: data.address,   x: 240, y: height - 685 },
+                    { text: data.contact,   x: 240, y: height - 752 },
+                    { text: data.email,     x: 820, y: height - 752 },
+                    { text: data.emergency, x: 240, y: height - 819 },
+                    { text: data.move_in,   x: 240, y: height - 880 },
+                    { text: data.move_out,  x: 820, y: height - 880 },
+                    { text: data.unit_size, x: 240, y: height - 948 },
                 ];
 
                 for (const f of fields) {
@@ -434,10 +431,10 @@ class Purplebox_Contracts_Controller {
                 }
 
                 // Access persons: name row, then phone + ID on lines below
-                const accessXs   = [410, 930, 1450];
-                const accessBase = height - 1789 + off;
-                const subSize    = 20;
-                const lineGap    = 34;
+                const accessXs   = [240, 540, 870];
+                const accessBase = height - 1000;
+                const subSize    = 10;
+                const lineGap    = 16;
                 [data.access1, data.access2, data.access3].forEach((ap, i) => {
                     const x = accessXs[i];
                     if (ap.name) {
